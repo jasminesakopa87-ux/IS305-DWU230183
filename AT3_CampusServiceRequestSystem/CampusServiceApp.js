@@ -131,6 +131,52 @@ async function viewAllRequestsFlow() {
   printRequestList(manager.getAllRequests());
 }
 
+async function updateRequestFlow() {
+  console.log('\n--- Update My Request ---');
+  const userId = await askRequired('Your User ID: ');
+  const requestId = await askRequired('Request ID to update: ');
+
+  console.log('Leave a field blank to keep its current value.');
+  const title = await ask('New title: ');
+  const description = await ask('New description: ');
+  const location = await ask('New campus location: ');
+
+  const changes = {};
+  if (title) changes.title = title;
+  if (description) changes.description = description;
+  if (location) changes.location = location;
+
+  const updated = manager.updateRequest(requestId, userId, changes);
+  console.log(`\nRequest updated successfully:\n${updated.getRequestSummary()}`);
+}
+
+async function cancelRequestFlow() {
+  console.log('\n--- Cancel My Request ---');
+  const userId = await askRequired('Your User ID: ');
+  const requestId = await askRequired('Request ID to cancel: ');
+  const cancelled = manager.cancelRequest(requestId, userId);
+  console.log(`\nRequest ${cancelled.getRequestId()} is now "${cancelled.getStatus()}".`);
+}
+
+async function searchRequestsFlow() {
+  console.log('\n--- Search Requests ---');
+  const term = await askRequired('Enter a keyword (title, description or ID): ');
+  printRequestList(manager.searchRequests(term));
+}
+
+async function viewSummaryFlow() {
+  console.log('\n--- Request Summary by Status ---');
+  const summary = manager.getRequestSummaryByStatus();
+  const statuses = Object.keys(summary);
+  if (statuses.length === 0) {
+    console.log('No requests have been submitted yet.');
+  } else {
+    for (const [status, count] of Object.entries(summary)) {
+      console.log(`  ${status.padEnd(12)}: ${count}`);
+    }
+  }
+}
+
 async function main() {
   let running = true;
   while (running) {
@@ -147,6 +193,14 @@ async function main() {
       await safely(viewMyRequestsFlow);
     } else if (choice === '5') {
       await safely(viewAllRequestsFlow);
+    } else if (choice === '6') {
+      await safely(updateRequestFlow);
+    } else if (choice === '7') {
+      await safely(cancelRequestFlow);
+    } else if (choice === '8') {
+      await safely(searchRequestsFlow);
+    } else if (choice === '9') {
+      await safely(viewSummaryFlow);
     } else if (choice === '10') {
       console.log('\nGoodbye!');
       running = false;
