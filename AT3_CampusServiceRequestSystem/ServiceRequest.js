@@ -185,3 +185,5 @@ class ServiceRequest {
 }
 
 module.exports = ServiceRequest;
+module.exports.CATEGORIES = CATEGORIES;
+module.exports.PRIORITIES = PRIORITIES;
