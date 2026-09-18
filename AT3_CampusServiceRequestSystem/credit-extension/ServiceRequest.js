@@ -10,7 +10,17 @@ const CATEGORIES = [
 ];
 
 const PRIORITIES = ['Low', 'Normal', 'High', 'Urgent'];
-const STATUSES = ['Submitted', 'Cancelled'];
+const STATUSES = ['Submitted', 'Reviewed', 'Assigned', 'InProgress', 'Resolved', 'Closed', 'Cancelled'];
+
+const ALLOWED_TRANSITIONS = {
+  Submitted: ['Reviewed', 'Cancelled'],
+  Reviewed: ['Assigned'],
+  Assigned: ['InProgress'],
+  InProgress: ['Resolved'],
+  Resolved: ['Closed'],
+  Closed: [],
+  Cancelled: [],
+};
 
 class ServiceRequest {
   #requestId;
@@ -23,6 +33,9 @@ class ServiceRequest {
   #status;
   #dateSubmitted;
   #dateUpdated;
+    #assignedTechnician;
+  #progressNotes;
+  #resolutionSummary;
 
   constructor(requestId, requester, title, description, location, category, priority) {
     this.#requestId = requestId;
@@ -35,6 +48,9 @@ class ServiceRequest {
     this.#status = 'Submitted';
     this.#dateSubmitted = new Date();
     this.#dateUpdated = new Date();
+        this.#assignedTechnician = null;
+    this.#progressNotes = [];
+    this.#resolutionSummary = null;
 
     this.validate();
   }
@@ -77,6 +93,18 @@ class ServiceRequest {
 
   getDateUpdated() {
     return this.#dateUpdated;
+  }
+
+    getAssignedTechnician() {
+    return this.#assignedTechnician;
+  }
+
+  getProgressNotes() {
+    return [...this.#progressNotes];
+  }
+
+  getResolutionSummary() {
+    return this.#resolutionSummary;
   }
 
     setTitle(title) {
@@ -162,13 +190,59 @@ class ServiceRequest {
     return this;
   }
 
-  cancelRequest() {
-    if (this.#status === 'Cancelled') {
-      throw new Error(`Validation Error: Request ${this.#requestId} is already Cancelled.`);
+    cancelRequest() {
+    this.#transitionTo('Cancelled', 'cancel this request');
+    return this;
+  }
+
+    review() {
+    this.#transitionTo('Reviewed', 'review this request');
+    return this;
+  }
+
+  assignTechnician(technician) {
+    this.#assignedTechnician = technician;
+    this.#transitionTo('Assigned', 'assign a Technician');
+    return this;
+  }
+
+  startWork() {
+    this.#transitionTo('InProgress', 'start work');
+    return this;
+  }
+
+  addProgressNote(note) {
+    if (typeof note !== 'string' || note.trim().length === 0) {
+      throw new Error('Validation Error: Progress note cannot be empty.');
     }
-    this.#status = 'Cancelled';
+    this.#progressNotes.push(note.trim());
     this.#dateUpdated = new Date();
     return this;
+  }
+
+  resolve(resolutionSummary) {
+    if (typeof resolutionSummary !== 'string' || resolutionSummary.trim().length === 0) {
+      throw new Error('Validation Error: Resolution summary cannot be empty.');
+    }
+    this.#resolutionSummary = resolutionSummary.trim();
+    this.#transitionTo('Resolved', 'resolve this request');
+    return this;
+  }
+
+  close() {
+    this.#transitionTo('Closed', 'close this request');
+    return this;
+  }
+
+    #transitionTo(nextStatus, actionLabel) {
+    const allowed = ALLOWED_TRANSITIONS[this.#status] ?? [];
+    if (!allowed.includes(nextStatus)) {
+      throw new Error(
+        `Validation Error: Cannot ${actionLabel} - request is "${this.#status}", but that action requires moving to "${nextStatus}" from an allowed status.`
+      );
+    }
+    this.#status = nextStatus;
+    this.#dateUpdated = new Date();
   }
 
   getRequestSummary() {
