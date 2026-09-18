@@ -1,4 +1,12 @@
-﻿# Campus Service Request Management System
-AT3 Major Project — IS305 Object-Oriented Programming
-Divine Word University
-Status: in progress (Pass component started).
+﻿# Pass Component
+
+Core Campus Service Request System — Weeks 8-10 milestone.
+
+## Run it
+node CampusServiceApp.js
+
+## Files
+- User.js
+- ServiceRequest.js
+- ServiceRequestManager.js
+- CampusServiceApp.js
