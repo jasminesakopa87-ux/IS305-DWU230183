@@ -27,19 +27,19 @@ class Technician extends User {
     this.#technicalSpeciality = technicalSpeciality.trim();
   }
 
-  startWork(request) {
-    request.startWork();
+    startWork(request) {
+    request.startWork(this);
     this.#available = false;
     return request;
   }
 
   addProgressNote(request, note) {
-    request.addProgressNote(note);
+    request.addProgressNote(note, this);
     return request;
   }
 
   resolveRequest(request, resolutionSummary) {
-    request.resolve(resolutionSummary);
+    request.resolve(resolutionSummary, this);
     this.#available = true;
     return request;
   }

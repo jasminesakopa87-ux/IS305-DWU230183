@@ -206,12 +206,14 @@ class ServiceRequest {
     return this;
   }
 
-  startWork() {
+    startWork(technician) {
+    this.#requireAssignedTechnician(technician);
     this.#transitionTo('InProgress', 'start work');
     return this;
   }
 
-  addProgressNote(note) {
+  addProgressNote(note, technician) {
+    this.#requireAssignedTechnician(technician);
     if (typeof note !== 'string' || note.trim().length === 0) {
       throw new Error('Validation Error: Progress note cannot be empty.');
     }
@@ -220,7 +222,8 @@ class ServiceRequest {
     return this;
   }
 
-  resolve(resolutionSummary) {
+  resolve(resolutionSummary, technician) {
+    this.#requireAssignedTechnician(technician);
     if (typeof resolutionSummary !== 'string' || resolutionSummary.trim().length === 0) {
       throw new Error('Validation Error: Resolution summary cannot be empty.');
     }
@@ -243,6 +246,12 @@ class ServiceRequest {
     }
     this.#status = nextStatus;
     this.#dateUpdated = new Date();
+  }
+
+    #requireAssignedTechnician(technician) {
+    if (!this.#assignedTechnician || technician !== this.#assignedTechnician) {
+      throw new Error('Validation Error: Only the Technician assigned to this request may perform this action.');
+    }
   }
 
   getRequestSummary() {
