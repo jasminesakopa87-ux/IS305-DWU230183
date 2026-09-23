@@ -12,6 +12,8 @@ class ServiceRequestManager {
     this.#requests = [];
   }
 
+  // ---------------- Users ----------------
+
   registerUser(user) {
     if (!(user instanceof User)) {
       throw new Error('Validation Error: registerUser() requires a User instance.');
@@ -31,7 +33,13 @@ class ServiceRequestManager {
     return this.#users.find((u) => u.getUserId() === userId);
   }
 
-    submitRequest(request) {
+  getUsersByType(userType) {
+    return this.#users.filter((u) => u.getUserType() === userType);
+  }
+
+  // ---------------- Requests: create / find ----------------
+
+  submitRequest(request) {
     if (!(request instanceof ServiceRequest)) {
       throw new Error('Validation Error: submitRequest() requires a ServiceRequest instance.');
     }
@@ -60,11 +68,20 @@ class ServiceRequestManager {
     return this.#requests.filter((r) => r.getRequester().getUserId() === userId);
   }
 
+  getRequestsByTechnician(technicianId) {
+    return this.#requests.filter((r) => {
+      const technician = r.getAssignedTechnician();
+      return technician && technician.getUserId() === technicianId;
+    });
+  }
+
   getAllRequests() {
     return [...this.#requests];
   }
 
-    updateRequest(requestId, userId, changes) {
+  // ---------------- Requester-facing actions ----------------
+
+  updateRequest(requestId, userId, changes) {
     const request = this.findRequestById(requestId);
     if (!request) {
       throw new Error(`Validation Error: No request found with ID "${requestId}".`);
@@ -88,7 +105,9 @@ class ServiceRequestManager {
     return request;
   }
 
-    searchRequests(searchText) {
+  // ---------------- Search, filter, sort ----------------
+
+  searchRequests(searchText) {
     const term = (searchText ?? '').trim().toLowerCase();
     if (!term) return this.getAllRequests();
     return this.#requests.filter((r) => {
@@ -100,6 +119,31 @@ class ServiceRequestManager {
     });
   }
 
+  filterByCategory(category) {
+    return this.#requests.filter((r) => r.getCategory() === category);
+  }
+
+  filterByStatus(status) {
+    return this.#requests.filter((r) => r.getStatus() === status);
+  }
+
+  filterByPriority(priority) {
+    return this.#requests.filter((r) => r.getPriority() === priority);
+  }
+
+  sortByPriorityScore(requests = this.#requests) {
+    return [...requests].sort((a, b) => b.calculatePriorityScore() - a.calculatePriorityScore());
+  }
+
+  sortByDateSubmitted(requests = this.#requests, ascending = true) {
+    return [...requests].sort((a, b) => {
+      const diff = a.getDateSubmitted().getTime() - b.getDateSubmitted().getTime();
+      return ascending ? diff : -diff;
+    });
+  }
+
+  // ---------------- Reporting ----------------
+
   getRequestSummaryByStatus() {
     const summary = {};
     for (const request of this.#requests) {
@@ -107,6 +151,14 @@ class ServiceRequestManager {
       summary[status] = (summary[status] ?? 0) + 1;
     }
     return summary;
+  }
+
+  getRequestHistory(requestId) {
+    const request = this.findRequestById(requestId);
+    if (!request) {
+      throw new Error(`Validation Error: No request found with ID "${requestId}".`);
+    }
+    return request.getHistory();
   }
 }
 
