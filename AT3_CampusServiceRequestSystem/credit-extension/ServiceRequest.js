@@ -33,9 +33,10 @@ class ServiceRequest {
   #status;
   #dateSubmitted;
   #dateUpdated;
-    #assignedTechnician;
+  #assignedTechnician;
   #progressNotes;
   #resolutionSummary;
+  #history;
 
   constructor(requestId, requester, title, description, location, category, priority) {
     this.#requestId = requestId;
@@ -48,12 +49,16 @@ class ServiceRequest {
     this.#status = 'Submitted';
     this.#dateSubmitted = new Date();
     this.#dateUpdated = new Date();
-        this.#assignedTechnician = null;
+    this.#assignedTechnician = null;
     this.#progressNotes = [];
     this.#resolutionSummary = null;
+    this.#history = [];
 
     this.validate();
+    this.#addHistory('Submitted');
   }
+
+  // ---------------- Getters ----------------
 
   getRequestId() {
     return this.#requestId;
@@ -95,7 +100,7 @@ class ServiceRequest {
     return this.#dateUpdated;
   }
 
-    getAssignedTechnician() {
+  getAssignedTechnician() {
     return this.#assignedTechnician;
   }
 
@@ -107,7 +112,13 @@ class ServiceRequest {
     return this.#resolutionSummary;
   }
 
-    setTitle(title) {
+  getHistory() {
+    return [...this.#history];
+  }
+
+  // ---------------- Controlled setters ----------------
+
+  setTitle(title) {
     if (typeof title !== 'string' || title.trim().length === 0) {
       throw new Error('Validation Error: Request title cannot be empty.');
     }
@@ -140,9 +151,12 @@ class ServiceRequest {
       throw new Error(`Validation Error: "${priority}" is not a supported priority.`);
     }
     this.#priority = priority;
+    this.#addHistory(`Priority changed to ${priority}`);
   }
 
-    validate() {
+  // ---------------- Validation ----------------
+
+  validate() {
     if (typeof this.#requestId !== 'string' || this.#requestId.trim().length === 0) {
       throw new Error('Validation Error: Request ID is required.');
     }
@@ -167,7 +181,9 @@ class ServiceRequest {
     return true;
   }
 
-    updateDetails(changes = {}) {
+  // ---------------- Requester-facing actions ----------------
+
+  updateDetails(changes = {}) {
     if (this.#status === 'Cancelled') {
       throw new Error('Validation Error: A cancelled request cannot be updated.');
     }
@@ -190,25 +206,31 @@ class ServiceRequest {
     return this;
   }
 
-    cancelRequest() {
+  cancelRequest() {
     this.#transitionTo('Cancelled', 'cancel this request');
+    this.#addHistory('Cancelled');
     return this;
   }
 
-    review() {
+  // ---------------- Workflow actions ----------------
+
+  review() {
     this.#transitionTo('Reviewed', 'review this request');
+    this.#addHistory('Reviewed');
     return this;
   }
 
   assignTechnician(technician) {
     this.#assignedTechnician = technician;
     this.#transitionTo('Assigned', 'assign a Technician');
+    this.#addHistory(`Assigned to ${technician.getFullName()}`);
     return this;
   }
 
-    startWork(technician) {
+  startWork(technician) {
     this.#requireAssignedTechnician(technician);
     this.#transitionTo('InProgress', 'start work');
+    this.#addHistory('Work started');
     return this;
   }
 
@@ -219,6 +241,7 @@ class ServiceRequest {
     }
     this.#progressNotes.push(note.trim());
     this.#dateUpdated = new Date();
+    this.#addHistory(`Progress note: ${note.trim()}`);
     return this;
   }
 
@@ -229,15 +252,19 @@ class ServiceRequest {
     }
     this.#resolutionSummary = resolutionSummary.trim();
     this.#transitionTo('Resolved', 'resolve this request');
+    this.#addHistory('Resolved');
     return this;
   }
 
   close() {
     this.#transitionTo('Closed', 'close this request');
+    this.#addHistory('Closed');
     return this;
   }
 
-    #transitionTo(nextStatus, actionLabel) {
+  // ---------------- Private helpers ----------------
+
+  #transitionTo(nextStatus, actionLabel) {
     const allowed = ALLOWED_TRANSITIONS[this.#status] ?? [];
     if (!allowed.includes(nextStatus)) {
       throw new Error(
@@ -248,11 +275,21 @@ class ServiceRequest {
     this.#dateUpdated = new Date();
   }
 
-    #requireAssignedTechnician(technician) {
+  #requireAssignedTechnician(technician) {
     if (!this.#assignedTechnician || technician !== this.#assignedTechnician) {
       throw new Error('Validation Error: Only the Technician assigned to this request may perform this action.');
     }
   }
+
+  #addHistory(action) {
+    this.#history.push({
+      timestamp: new Date(),
+      status: this.#status,
+      action,
+    });
+  }
+
+  // ---------------- Display ----------------
 
   getRequestSummary() {
     return (
