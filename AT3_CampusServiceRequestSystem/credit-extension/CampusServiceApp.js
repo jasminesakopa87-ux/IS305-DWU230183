@@ -126,14 +126,55 @@ async function registerUserFlow() {
   console.log(`\nUser registered successfully:\n${user.displayInfo()}`);
 }
 
+async function submitRequestFlow() {
+  console.log('\n--- Submit Service Request ---');
+  const requesterId = await askRequired('Your User ID: ');
+  const requester = manager.findUserById(requesterId);
+  if (!requester) {
+    console.log(`No registered user found with ID "${requesterId}". Please register first.`);
+    return;
+  }
+
+  const requestId = await askRequired('New Request ID: ');
+  const title = await askRequired('Title: ');
+  const description = await askRequired('Description: ');
+  const location = await askRequired('Campus location: ');
+  const priority = await askFromList('Select a priority:', PRIORITIES);
+  const category = await askFromList('Select a category:', CATEGORIES);
+
+  let request;
+
+  if (category === 'ICT Support') {
+    const deviceType = await askFromList('Device type:', DEVICE_TYPES);
+    const systemName = await askRequired('System/service name (e.g. Student Portal): ');
+    request = new ICTSupportRequest(requestId, requester, title, description, location, priority, deviceType, systemName);
+  } else if (category === 'Facilities Maintenance') {
+    const building = await askRequired('Building: ');
+    const roomNumber = await askRequired('Room number: ');
+    const hazardLevel = await askFromList('Hazard level:', HAZARD_LEVELS);
+    request = new MaintenanceRequest(requestId, requester, title, description, location, priority, building, roomNumber, hazardLevel);
+  } else if (category === 'Cleaning and Sanitation') {
+    const cleaningArea = await askRequired('Cleaning area (e.g. Toilet, Cafeteria): ');
+    const hygieneRisk = await askYesNo('Is this a hygiene risk (e.g. spill, waste)?');
+    request = new CleaningRequest(requestId, requester, title, description, location, priority, cleaningArea, hygieneRisk);
+  } else {
+    request = new ServiceRequest(requestId, requester, title, description, location, category, priority);
+  }
+
+  manager.submitRequest(request);
+  console.log(`\nRequest submitted successfully:\n${request.getRequestSummary()}`);
+}
+
 async function main() {
   let running = true;
   while (running) {
     console.log(MENU_TEXT);
     const choice = await ask('Enter your choice (1-13): ');
 
-    if (choice === '1') {
+        if (choice === '1') {
       await safely(registerUserFlow);
+    } else if (choice === '2') {
+      await safely(submitRequestFlow);
     } else if (choice === '13') {
       console.log('\nGoodbye!');
       running = false;
