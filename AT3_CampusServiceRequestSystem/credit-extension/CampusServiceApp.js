@@ -92,6 +92,8 @@ function printRequestList(requests) {
   });
 }
 
+// ---------------- Option 1 ----------------
+
 async function registerUserFlow() {
   console.log('\n--- Register User ---');
   const role = await askFromList('Select a role:', [
@@ -125,6 +127,8 @@ async function registerUserFlow() {
   manager.registerUser(user);
   console.log(`\nUser registered successfully:\n${user.displayInfo()}`);
 }
+
+// ---------------- Option 2 ----------------
 
 async function submitRequestFlow() {
   console.log('\n--- Submit Service Request ---');
@@ -165,16 +169,241 @@ async function submitRequestFlow() {
   console.log(`\nRequest submitted successfully:\n${request.getRequestSummary()}`);
 }
 
+// ---------------- Options 3-9 ----------------
+
+async function viewRequestByIdFlow() {
+  console.log('\n--- View Request by ID ---');
+  const requestId = await askRequired('Request ID: ');
+  const request = manager.findRequestById(requestId);
+  if (!request) {
+    console.log(`No request found with ID "${requestId}".`);
+  } else {
+    console.log(`\n${request.getRequestSummary()}`);
+  }
+}
+
+async function viewMyRequestsFlow() {
+  console.log('\n--- View My Requests ---');
+  const userId = await askRequired('Your User ID: ');
+  printRequestList(manager.getRequestsByUser(userId));
+}
+
+async function viewAllRequestsFlow() {
+  console.log('\n--- View All Requests ---');
+  printRequestList(manager.getAllRequests());
+}
+
+async function updateRequestFlow() {
+  console.log('\n--- Update My Request ---');
+  const userId = await askRequired('Your User ID: ');
+  const requestId = await askRequired('Request ID to update: ');
+
+  console.log('Leave a field blank to keep its current value.');
+  const title = await ask('New title: ');
+  const description = await ask('New description: ');
+  const location = await ask('New campus location: ');
+
+  const changes = {};
+  if (title) changes.title = title;
+  if (description) changes.description = description;
+  if (location) changes.location = location;
+
+  const updated = manager.updateRequest(requestId, userId, changes);
+  console.log(`\nRequest updated successfully:\n${updated.getRequestSummary()}`);
+}
+
+async function cancelRequestFlow() {
+  console.log('\n--- Cancel My Request ---');
+  const userId = await askRequired('Your User ID: ');
+  const requestId = await askRequired('Request ID to cancel: ');
+  const cancelled = manager.cancelRequest(requestId, userId);
+  console.log(`\nRequest ${cancelled.getRequestId()} is now "${cancelled.getStatus()}".`);
+}
+
+async function searchRequestsFlow() {
+  console.log('\n--- Search Requests ---');
+  const term = await askRequired('Enter a keyword (title, description or ID): ');
+  printRequestList(manager.searchRequests(term));
+}
+
+async function viewSummaryFlow() {
+  console.log('\n--- Request Summary by Status ---');
+  const summary = manager.getRequestSummaryByStatus();
+  const statuses = Object.keys(summary);
+  if (statuses.length === 0) {
+    console.log('No requests have been submitted yet.');
+  } else {
+    for (const [status, count] of Object.entries(summary)) {
+      console.log(`  ${status.padEnd(12)}: ${count}`);
+    }
+  }
+}
+
+// ---------------- Option 10: Service Officer Actions ----------------
+
+async function serviceOfficerFlow() {
+  console.log('\n--- Service Officer Actions ---');
+  const officerId = await askRequired('Your Service Officer User ID: ');
+  const officer = manager.findUserById(officerId);
+  if (!officer || !(officer instanceof ServiceOfficer)) {
+    console.log(`No Service Officer found with ID "${officerId}".`);
+    return;
+  }
+
+  let inSubmenu = true;
+  while (inSubmenu) {
+    const action = await askFromList('\nChoose an action:', [
+      'Review a request',
+      'Assign priority',
+      'Assign a Technician',
+      'Close a resolved request',
+      'Back to Main Menu',
+    ]);
+
+    if (action === 'Review a request') {
+      await safely(async () => {
+        const requestId = await askRequired('Request ID: ');
+        const request = manager.findRequestById(requestId);
+        if (!request) throw new Error(`No request found with ID "${requestId}".`);
+        officer.reviewRequest(request);
+        console.log(`\nRequest ${requestId} reviewed. Status: ${request.getStatus()}`);
+      });
+    } else if (action === 'Assign priority') {
+      await safely(async () => {
+        const requestId = await askRequired('Request ID: ');
+        const request = manager.findRequestById(requestId);
+        if (!request) throw new Error(`No request found with ID "${requestId}".`);
+        const priority = await askFromList('Select new priority:', PRIORITIES);
+        officer.assignPriority(request, priority);
+        console.log(`\nPriority updated to ${priority}.`);
+      });
+    } else if (action === 'Assign a Technician') {
+      await safely(async () => {
+        const requestId = await askRequired('Request ID: ');
+        const request = manager.findRequestById(requestId);
+        if (!request) throw new Error(`No request found with ID "${requestId}".`);
+        const technicianId = await askRequired('Technician User ID: ');
+        const technician = manager.findUserById(technicianId);
+        if (!technician || !(technician instanceof Technician)) {
+          throw new Error(`No Technician found with ID "${technicianId}".`);
+        }
+        officer.assignTechnician(request, technician);
+        console.log(`\nRequest ${requestId} assigned to ${technician.getFullName()}.`);
+      });
+    } else if (action === 'Close a resolved request') {
+      await safely(async () => {
+        const requestId = await askRequired('Request ID: ');
+        const request = manager.findRequestById(requestId);
+        if (!request) throw new Error(`No request found with ID "${requestId}".`);
+        officer.closeRequest(request);
+        console.log(`\nRequest ${requestId} closed.`);
+      });
+    } else {
+      inSubmenu = false;
+    }
+  }
+}
+
+// ---------------- Option 11: Technician Actions ----------------
+
+async function technicianFlow() {
+  console.log('\n--- Technician Actions ---');
+  const technicianId = await askRequired('Your Technician User ID: ');
+  const technician = manager.findUserById(technicianId);
+  if (!technician || !(technician instanceof Technician)) {
+    console.log(`No Technician found with ID "${technicianId}".`);
+    return;
+  }
+
+  let inSubmenu = true;
+  while (inSubmenu) {
+    const action = await askFromList('\nChoose an action:', [
+      'View my assigned requests',
+      'Start work on a request',
+      'Add a progress note',
+      'Resolve a request',
+      'Back to Main Menu',
+    ]);
+
+    if (action === 'View my assigned requests') {
+      await safely(async () => {
+        printRequestList(manager.getRequestsByTechnician(technicianId));
+      });
+    } else if (action === 'Start work on a request') {
+      await safely(async () => {
+        const requestId = await askRequired('Request ID: ');
+        const request = manager.findRequestById(requestId);
+        if (!request) throw new Error(`No request found with ID "${requestId}".`);
+        technician.startWork(request);
+        console.log(`\nWork started on request ${requestId}.`);
+      });
+    } else if (action === 'Add a progress note') {
+      await safely(async () => {
+        const requestId = await askRequired('Request ID: ');
+        const request = manager.findRequestById(requestId);
+        if (!request) throw new Error(`No request found with ID "${requestId}".`);
+        const note = await askRequired('Progress note: ');
+        technician.addProgressNote(request, note);
+        console.log(`\nProgress note added to request ${requestId}.`);
+      });
+    } else if (action === 'Resolve a request') {
+      await safely(async () => {
+        const requestId = await askRequired('Request ID: ');
+        const request = manager.findRequestById(requestId);
+        if (!request) throw new Error(`No request found with ID "${requestId}".`);
+        const summary = await askRequired('Resolution summary: ');
+        technician.resolveRequest(request, summary);
+        console.log(`\nRequest ${requestId} marked Resolved.`);
+      });
+    } else {
+      inSubmenu = false;
+    }
+  }
+}
+
+// ---------------- Option 12: View Request History ----------------
+
+async function viewHistoryFlow() {
+  console.log('\n--- View Request History ---');
+  const requestId = await askRequired('Request ID: ');
+  const history = manager.getRequestHistory(requestId);
+  history.forEach((entry, i) => {
+    console.log(`  ${i + 1}. [${entry.status}] ${entry.action} (${entry.timestamp.toLocaleString()})`);
+  });
+}
+
+// ---------------- Main loop ----------------
+
 async function main() {
   let running = true;
   while (running) {
     console.log(MENU_TEXT);
     const choice = await ask('Enter your choice (1-13): ');
 
-        if (choice === '1') {
+    if (choice === '1') {
       await safely(registerUserFlow);
     } else if (choice === '2') {
       await safely(submitRequestFlow);
+    } else if (choice === '3') {
+      await safely(viewRequestByIdFlow);
+    } else if (choice === '4') {
+      await safely(viewMyRequestsFlow);
+    } else if (choice === '5') {
+      await safely(viewAllRequestsFlow);
+    } else if (choice === '6') {
+      await safely(updateRequestFlow);
+    } else if (choice === '7') {
+      await safely(cancelRequestFlow);
+    } else if (choice === '8') {
+      await safely(searchRequestsFlow);
+    } else if (choice === '9') {
+      await safely(viewSummaryFlow);
+    } else if (choice === '10') {
+      await safely(serviceOfficerFlow);
+    } else if (choice === '11') {
+      await safely(technicianFlow);
+    } else if (choice === '12') {
+      await safely(viewHistoryFlow);
     } else if (choice === '13') {
       console.log('\nGoodbye!');
       running = false;
