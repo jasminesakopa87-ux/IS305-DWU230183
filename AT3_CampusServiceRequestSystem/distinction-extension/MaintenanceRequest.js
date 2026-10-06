@@ -8,59 +8,61 @@ class MaintenanceRequest extends ServiceRequest {
   #building;
   #roomNumber;
   #hazardLevel;
+  #equipmentAffected;
 
-  constructor(requestId, requester, title, description, location, priority, building, roomNumber, hazardLevel) {
+  constructor(commonData, specialisedData = {}) {
+    const { requestId, requester, title, description, location, priority } = commonData;
     super(requestId, requester, title, description, location, 'Facilities Maintenance', priority);
-    this.setBuilding(building);
-    this.setRoomNumber(roomNumber);
-    this.setHazardLevel(hazardLevel);
+    this.#building = specialisedData.building;
+    this.#roomNumber = specialisedData.roomNumber;
+    this.#hazardLevel = specialisedData.hazardLevel;
+    this.#equipmentAffected = specialisedData.equipmentAffected ?? 'None';
+    this.validateSpecialisedFields();
   }
 
-  getBuilding() {
-    return this.#building;
-  }
+  getBuilding() { return this.#building; }
+  getRoomNumber() { return this.#roomNumber; }
+  getHazardLevel() { return this.#hazardLevel; }
+  getEquipmentAffected() { return this.#equipmentAffected; }
 
-  getRoomNumber() {
-    return this.#roomNumber;
-  }
-
-  getHazardLevel() {
-    return this.#hazardLevel;
-  }
-
-  setBuilding(building) {
-    if (typeof building !== 'string' || building.trim().length === 0) {
-      throw new Error('Validation Error: Building cannot be empty.');
+  validateSpecialisedFields() {
+    if (typeof this.#building !== 'string' || this.#building.trim().length === 0) {
+      throw new Error('Validation Error: Building is required.');
     }
-    this.#building = building.trim();
-  }
-
-  setRoomNumber(roomNumber) {
-    if (typeof roomNumber !== 'string' || roomNumber.trim().length === 0) {
-      throw new Error('Validation Error: Room number cannot be empty.');
+    if (typeof this.#roomNumber !== 'string' || this.#roomNumber.trim().length === 0) {
+      throw new Error('Validation Error: Room number is required.');
     }
-    this.#roomNumber = roomNumber.trim();
-  }
-
-  setHazardLevel(hazardLevel) {
-    if (!HAZARD_LEVELS.includes(hazardLevel)) {
-      throw new Error(`Validation Error: "${hazardLevel}" is not a supported hazard level.`);
+    if (!HAZARD_LEVELS.includes(this.#hazardLevel)) {
+      throw new Error(`Validation Error: "${this.#hazardLevel}" is not a supported hazard level.`);
     }
-    this.#hazardLevel = hazardLevel;
   }
 
   calculatePriorityScore() {
-    const weights = { Low: 1, Normal: 2, High: 3, Urgent: 4 };
-    const base = weights[this.getPriority()] ?? 0;
-    const hazardBonus = this.#hazardLevel === 'High' ? 2 : this.#hazardLevel === 'Medium' ? 1 : 0;
+    const base = this.getBasePriorityScore();
+    const hazardBonus = this.#hazardLevel === 'High' ? 3 : this.#hazardLevel === 'Medium' ? 1 : 0;
     return base + hazardBonus;
+  }
+
+  getTargetResolutionHours() {
+    return this.#hazardLevel === 'High' ? 4 : this.#hazardLevel === 'Medium' ? 24 : 72;
   }
 
   getRequestSummary() {
     return (
-      `${super.getRequestSummary()}\n` +
-      `  [Maintenance Details] Building: ${this.#building}, Room: ${this.#roomNumber} | Hazard: ${this.#hazardLevel}`
+      `${this.getBaseSummary()}\n` +
+      `  [Maintenance Details] Building: ${this.#building}, Room: ${this.#roomNumber} | ` +
+      `Hazard: ${this.#hazardLevel} | Equipment: ${this.#equipmentAffected}`
     );
+  }
+
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      building: this.#building,
+      roomNumber: this.#roomNumber,
+      hazardLevel: this.#hazardLevel,
+      equipmentAffected: this.#equipmentAffected,
+    };
   }
 }
 

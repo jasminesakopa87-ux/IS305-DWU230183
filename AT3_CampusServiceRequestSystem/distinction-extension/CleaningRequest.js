@@ -5,47 +5,56 @@ const ServiceRequest = require('./ServiceRequest');
 class CleaningRequest extends ServiceRequest {
   #cleaningArea;
   #hygieneRisk;
+  #serviceType;
+  #preferredServiceTime;
 
-  constructor(requestId, requester, title, description, location, priority, cleaningArea, hygieneRisk) {
+  constructor(commonData, specialisedData = {}) {
+    const { requestId, requester, title, description, location, priority } = commonData;
     super(requestId, requester, title, description, location, 'Cleaning and Sanitation', priority);
-    this.setCleaningArea(cleaningArea);
-    this.setHygieneRisk(hygieneRisk);
+    this.#cleaningArea = specialisedData.cleaningArea;
+    this.#hygieneRisk = Boolean(specialisedData.hygieneRisk);
+    this.#serviceType = specialisedData.serviceType ?? 'Routine Cleaning';
+    this.#preferredServiceTime = specialisedData.preferredServiceTime ?? 'Anytime';
+    this.validateSpecialisedFields();
   }
 
-  getCleaningArea() {
-    return this.#cleaningArea;
-  }
+  getCleaningArea() { return this.#cleaningArea; }
+  hasHygieneRisk() { return this.#hygieneRisk; }
+  getServiceType() { return this.#serviceType; }
+  getPreferredServiceTime() { return this.#preferredServiceTime; }
 
-  hasHygieneRisk() {
-    return this.#hygieneRisk;
-  }
-
-  setCleaningArea(cleaningArea) {
-    if (typeof cleaningArea !== 'string' || cleaningArea.trim().length === 0) {
+  validateSpecialisedFields() {
+    if (typeof this.#cleaningArea !== 'string' || this.#cleaningArea.trim().length === 0) {
       throw new Error('Validation Error: Cleaning area cannot be empty.');
     }
-    this.#cleaningArea = cleaningArea.trim();
-  }
-
-  setHygieneRisk(hygieneRisk) {
-    if (typeof hygieneRisk !== 'boolean') {
-      throw new Error('Validation Error: Hygiene risk must be true or false.');
-    }
-    this.#hygieneRisk = hygieneRisk;
   }
 
   calculatePriorityScore() {
-    const weights = { Low: 1, Normal: 2, High: 3, Urgent: 4 };
-    const base = weights[this.getPriority()] ?? 0;
+    const base = this.getBasePriorityScore();
     const riskBonus = this.#hygieneRisk ? 3 : 0;
     return base + riskBonus;
   }
 
+  getTargetResolutionHours() {
+    return this.#hygieneRisk ? 2 : 48;
+  }
+
   getRequestSummary() {
     return (
-      `${super.getRequestSummary()}\n` +
-      `  [Cleaning Details] Area: ${this.#cleaningArea} | Hygiene Risk: ${this.#hygieneRisk ? 'Yes' : 'No'}`
+      `${this.getBaseSummary()}\n` +
+      `  [Cleaning Details] Area: ${this.#cleaningArea} | Hygiene Risk: ${this.#hygieneRisk ? 'Yes' : 'No'} | ` +
+      `Service Type: ${this.#serviceType} | Preferred Time: ${this.#preferredServiceTime}`
     );
+  }
+
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      cleaningArea: this.#cleaningArea,
+      hygieneRisk: this.#hygieneRisk,
+      serviceType: this.#serviceType,
+      preferredServiceTime: this.#preferredServiceTime,
+    };
   }
 }
 
