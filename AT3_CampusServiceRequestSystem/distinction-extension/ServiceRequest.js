@@ -1,7 +1,5 @@
 'use strict';
 
-const User = require('./User');
-
 const CATEGORIES = [
   'ICT Support',
   'Facilities Maintenance',
@@ -39,6 +37,9 @@ class ServiceRequest {
   #history;
 
   constructor(requestId, requester, title, description, location, category, priority) {
+    if (new.target === ServiceRequest) {
+      throw new TypeError('Abstract Class Error: ServiceRequest is abstract and cannot be instantiated directly.');
+    }
     this.#requestId = requestId;
     this.#requester = requester;
     this.#title = title;
@@ -54,69 +55,26 @@ class ServiceRequest {
     this.#resolutionSummary = null;
     this.#history = [];
 
-    this.validate();
-    this.#addHistory('Submitted');
+    this.validateCommon();
+    this.#addHistory(null, 'Submitted', 'Request submitted.', requester);
   }
 
-  // ---------------- Getters ----------------
-
-  getRequestId() {
-    return this.#requestId;
-  }
-
-  getRequester() {
-    return this.#requester;
-  }
-
-  getTitle() {
-    return this.#title;
-  }
-
-  getDescription() {
-    return this.#description;
-  }
-
-  getLocation() {
-    return this.#location;
-  }
-
-  getCategory() {
-    return this.#category;
-  }
-
-  getPriority() {
-    return this.#priority;
-  }
-
-  getStatus() {
-    return this.#status;
-  }
-
-  getDateSubmitted() {
-    return this.#dateSubmitted;
-  }
-
-  getDateUpdated() {
-    return this.#dateUpdated;
-  }
-
-  getAssignedTechnician() {
-    return this.#assignedTechnician;
-  }
-
-  getProgressNotes() {
-    return [...this.#progressNotes];
-  }
-
-  getResolutionSummary() {
-    return this.#resolutionSummary;
-  }
-
-  getHistory() {
-    return [...this.#history];
-  }
-
-  // ---------------- Controlled setters ----------------
+  getRequestId() { return this.#requestId; }
+  getRequester() { return this.#requester; }
+  getRequesterId() { return this.#requester.getUserId(); }
+  getTitle() { return this.#title; }
+  getDescription() { return this.#description; }
+  getLocation() { return this.#location; }
+  getCategory() { return this.#category; }
+  getPriority() { return this.#priority; }
+  getStatus() { return this.#status; }
+  getDateSubmitted() { return this.#dateSubmitted; }
+  getDateUpdated() { return this.#dateUpdated; }
+  getAssignedTechnician() { return this.#assignedTechnician; }
+  getProgressNotes() { return [...this.#progressNotes]; }
+  getResolutionSummary() { return this.#resolutionSummary; }
+  getHistory() { return [...this.#history]; }
+  getRequestType() { return this.constructor.name; }
 
   setTitle(title) {
     if (typeof title !== 'string' || title.trim().length === 0) {
@@ -139,29 +97,21 @@ class ServiceRequest {
     this.#location = location.trim();
   }
 
-  setCategory(category) {
-    if (!CATEGORIES.includes(category)) {
-      throw new Error(`Validation Error: "${category}" is not a supported category.`);
-    }
-    this.#category = category;
-  }
-
-  setPriority(priority) {
+  setPriority(priority, actor) {
+    this.#requireRole(actor, 'Service Officer', 'Only a Service Officer may change the priority of a request.');
     if (!PRIORITIES.includes(priority)) {
       throw new Error(`Validation Error: "${priority}" is not a supported priority.`);
     }
     this.#priority = priority;
-    this.#addHistory(`Priority changed to ${priority}`);
+    this.#addHistory(this.#status, this.#status, `Priority changed to ${priority}`, actor);
   }
 
-  // ---------------- Validation ----------------
-
-  validate() {
+  validateCommon() {
     if (typeof this.#requestId !== 'string' || this.#requestId.trim().length === 0) {
       throw new Error('Validation Error: Request ID is required.');
     }
-    if (!(this.#requester instanceof User)) {
-      throw new Error('Validation Error: A valid requester (User) is required.');
+    if (!this.#requester || typeof this.#requester.getUserId !== 'function' || typeof this.#requester.getFullName !== 'function') {
+      throw new Error('Validation Error: A valid requester is required.');
     }
     if (typeof this.#title !== 'string' || this.#title.trim().length === 0) {
       throw new Error('Validation Error: Request title is required.');
@@ -181,56 +131,60 @@ class ServiceRequest {
     return true;
   }
 
-  // ---------------- Requester-facing actions ----------------
+  validateSpecialisedFields() {
+    throw new Error('Abstract Method Error: validateSpecialisedFields() must be implemented by a subclass.');
+  }
 
-  updateDetails(changes = {}) {
-    if (this.#status === 'Cancelled') {
-      throw new Error('Validation Error: A cancelled request cannot be updated.');
+  updateDetails(changes = {}, actor) {
+    if (!actor || actor.getUserId() !== this.getRequesterId()) {
+      throw new Error('Validation Error: You can only update your own requests.');
     }
-    if (Object.prototype.hasOwnProperty.call(changes, 'title')) {
-      this.setTitle(changes.title);
+    if (this.#status !== 'Submitted') {
+      throw new Error('Validation Error: Only a Submitted request can be updated.');
     }
-    if (Object.prototype.hasOwnProperty.call(changes, 'description')) {
-      this.setDescription(changes.description);
-    }
-    if (Object.prototype.hasOwnProperty.call(changes, 'location')) {
-      this.setLocation(changes.location);
-    }
-    if (Object.prototype.hasOwnProperty.call(changes, 'category')) {
-      this.setCategory(changes.category);
-    }
-    if (Object.prototype.hasOwnProperty.call(changes, 'priority')) {
-      this.setPriority(changes.priority);
-    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'title')) this.setTitle(changes.title);
+    if (Object.prototype.hasOwnProperty.call(changes, 'description')) this.setDescription(changes.description);
+    if (Object.prototype.hasOwnProperty.call(changes, 'location')) this.setLocation(changes.location);
     this.#dateUpdated = new Date();
+    this.#addHistory(this.#status, this.#status, 'Request details updated.', actor);
     return this;
   }
 
-  cancelRequest() {
+  cancelRequest(actor) {
+    if (!actor || actor.getUserId() !== this.getRequesterId()) {
+      throw new Error('Validation Error: You can only cancel your own requests.');
+    }
+    const previous = this.#status;
     this.#transitionTo('Cancelled', 'cancel this request');
-    this.#addHistory('Cancelled');
+    this.#addHistory(previous, 'Cancelled', 'Request cancelled by requester.', actor);
     return this;
   }
 
-  // ---------------- Workflow actions ----------------
-
-  review() {
+  review(actor) {
+    this.#requireRole(actor, 'Service Officer', 'Only a Service Officer may review a request.');
+    const previous = this.#status;
     this.#transitionTo('Reviewed', 'review this request');
-    this.#addHistory('Reviewed');
+    this.#addHistory(previous, 'Reviewed', 'Request reviewed.', actor);
     return this;
   }
 
-  assignTechnician(technician) {
+  assignTechnician(technician, actor) {
+    this.#requireRole(actor, 'Service Officer', 'Only a Service Officer may assign a Technician.');
+    if (!technician || typeof technician.getUserId !== 'function') {
+      throw new Error('Validation Error: A valid Technician must be provided.');
+    }
     this.#assignedTechnician = technician;
+    const previous = this.#status;
     this.#transitionTo('Assigned', 'assign a Technician');
-    this.#addHistory(`Assigned to ${technician.getFullName()}`);
+    this.#addHistory(previous, 'Assigned', `Assigned to ${technician.getFullName()}.`, actor);
     return this;
   }
 
   startWork(technician) {
     this.#requireAssignedTechnician(technician);
+    const previous = this.#status;
     this.#transitionTo('InProgress', 'start work');
-    this.#addHistory('Work started');
+    this.#addHistory(previous, 'InProgress', 'Work started.', technician);
     return this;
   }
 
@@ -239,9 +193,9 @@ class ServiceRequest {
     if (typeof note !== 'string' || note.trim().length === 0) {
       throw new Error('Validation Error: Progress note cannot be empty.');
     }
-    this.#progressNotes.push(note.trim());
+    this.#progressNotes.push({ note: note.trim(), timestamp: new Date() });
     this.#dateUpdated = new Date();
-    this.#addHistory(`Progress note: ${note.trim()}`);
+    this.#addHistory(this.#status, this.#status, `Progress note: ${note.trim()}`, technician);
     return this;
   }
 
@@ -251,59 +205,135 @@ class ServiceRequest {
       throw new Error('Validation Error: Resolution summary cannot be empty.');
     }
     this.#resolutionSummary = resolutionSummary.trim();
+    const previous = this.#status;
     this.#transitionTo('Resolved', 'resolve this request');
-    this.#addHistory('Resolved');
+    this.#addHistory(previous, 'Resolved', 'Request resolved.', technician);
     return this;
   }
 
-  close() {
+  close(actor) {
+    this.#requireRole(actor, 'Service Officer', 'Only a Service Officer may close a Resolved request.');
+    if (this.#status !== 'Resolved') {
+      throw new Error('Validation Error: Only a Resolved request can be closed.');
+    }
+    const previous = this.#status;
     this.#transitionTo('Closed', 'close this request');
-    this.#addHistory('Closed');
+    this.#addHistory(previous, 'Closed', 'Request closed and verified.', actor);
     return this;
   }
-
-  // ---------------- Private helpers ----------------
 
   #transitionTo(nextStatus, actionLabel) {
     const allowed = ALLOWED_TRANSITIONS[this.#status] ?? [];
     if (!allowed.includes(nextStatus)) {
       throw new Error(
-        `Validation Error: Cannot ${actionLabel} - request is "${this.#status}", but that action requires moving to "${nextStatus}" from an allowed status.`
+        `Validation Error: Cannot ${actionLabel} - request is currently "${this.#status}", which does not allow moving to "${nextStatus}".`
       );
     }
     this.#status = nextStatus;
     this.#dateUpdated = new Date();
   }
 
+  #requireRole(actor, roleName, message) {
+    if (!actor || typeof actor.getRole !== 'function' || actor.getRole() !== roleName) {
+      throw new Error(`Validation Error: ${message}`);
+    }
+  }
+
   #requireAssignedTechnician(technician) {
-    if (!this.#assignedTechnician || technician !== this.#assignedTechnician) {
+    if (
+      !technician ||
+      typeof technician.getUserId !== 'function' ||
+      !this.#assignedTechnician ||
+      technician.getUserId() !== this.#assignedTechnician.getUserId()
+    ) {
       throw new Error('Validation Error: Only the Technician assigned to this request may perform this action.');
     }
   }
 
-  #addHistory(action) {
+  #addHistory(previousStatus, newStatus, action, actor) {
     this.#history.push({
-      timestamp: new Date(),
-      status: this.#status,
+      previousStatus,
+      newStatus,
       action,
+      actorId: actor && typeof actor.getUserId === 'function' ? actor.getUserId() : null,
+      actorRole: actor && typeof actor.getRole === 'function' ? actor.getRole() : null,
+      timestamp: new Date(),
     });
   }
 
-  // ---------------- Display ----------------
+  calculatePriorityScore() {
+    throw new Error('Abstract Method Error: calculatePriorityScore() must be implemented by a subclass.');
+  }
+
+  getTargetResolutionHours() {
+    throw new Error('Abstract Method Error: getTargetResolutionHours() must be implemented by a subclass.');
+  }
 
   getRequestSummary() {
+    throw new Error('Abstract Method Error: getRequestSummary() must be implemented by a subclass.');
+  }
+
+  getBasePriorityScore() {
+    const weights = { Low: 1, Normal: 2, High: 3, Urgent: 4 };
+    return weights[this.#priority] ?? 0;
+  }
+
+  getBaseSummary() {
     return (
       `[${this.#requestId}] ${this.#title}\n` +
-      `  Requester   : ${this.#requester.getFullName()} (${this.#requester.getUserId()})\n` +
+      `  Type        : ${this.getRequestType()}\n` +
       `  Category    : ${this.#category}\n` +
+      `  Requester ID: ${this.getRequesterId()} (${this.#requester.getFullName()})\n` +
       `  Priority    : ${this.#priority}\n` +
       `  Status      : ${this.#status}\n` +
       `  Location    : ${this.#location}\n` +
+      `  Technician  : ${this.#assignedTechnician ? this.#assignedTechnician.getFullName() : 'Unassigned'}\n` +
+      `  Submitted   : ${this.#dateSubmitted.toLocaleString()}\n` +
       `  Description : ${this.#description}`
     );
+  }
+
+  toJSON() {
+    return {
+      requestId: this.#requestId,
+      requestType: this.getRequestType(),
+      requesterId: this.getRequesterId(),
+      requesterName: this.#requester.getFullName(),
+      title: this.#title,
+      description: this.#description,
+      location: this.#location,
+      category: this.#category,
+      priority: this.#priority,
+      status: this.#status,
+      assignedTechnicianId: this.#assignedTechnician ? this.#assignedTechnician.getUserId() : null,
+      assignedTechnicianName: this.#assignedTechnician ? this.#assignedTechnician.getFullName() : null,
+      progressNotes: this.#progressNotes.map((p) => ({ note: p.note, timestamp: p.timestamp.toISOString() })),
+      resolutionSummary: this.#resolutionSummary,
+      dateSubmitted: this.#dateSubmitted.toISOString(),
+      dateUpdated: this.#dateUpdated.toISOString(),
+      history: this.#history.map((h) => ({ ...h, timestamp: h.timestamp.toISOString() })),
+    };
+  }
+
+  _restoreState(savedData) {
+    this.#status = savedData.status;
+    this.#dateSubmitted = new Date(savedData.dateSubmitted);
+    this.#dateUpdated = new Date(savedData.dateUpdated);
+    this.#resolutionSummary = savedData.resolutionSummary ?? null;
+    this.#progressNotes = (savedData.progressNotes ?? []).map((p) => ({ note: p.note, timestamp: new Date(p.timestamp) }));
+    this.#history = (savedData.history ?? []).map((h) => ({ ...h, timestamp: new Date(h.timestamp) }));
+    if (savedData.assignedTechnicianId) {
+      const techId = savedData.assignedTechnicianId;
+      const techName = savedData.assignedTechnicianName;
+      this.#assignedTechnician = { getUserId: () => techId, getFullName: () => techName, getRole: () => 'Technician' };
+    } else {
+      this.#assignedTechnician = null;
+    }
+    return this;
   }
 }
 
 module.exports = ServiceRequest;
 module.exports.CATEGORIES = CATEGORIES;
 module.exports.PRIORITIES = PRIORITIES;
+module.exports.STATUSES = STATUSES;
