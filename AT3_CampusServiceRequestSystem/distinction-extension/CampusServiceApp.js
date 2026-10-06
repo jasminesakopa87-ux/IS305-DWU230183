@@ -2,28 +2,40 @@
 
 const readline = require('node:readline/promises');
 const { stdin: input, stdout: output } = require('node:process');
+const path = require('node:path');
 
 const StudentRequester = require('./StudentRequester');
 const StaffRequester = require('./StaffRequester');
 const ServiceOfficer = require('./ServiceOfficer');
 const Technician = require('./Technician');
 
-const ServiceRequest = require('./ServiceRequest');
 const { CATEGORIES, PRIORITIES } = require('./ServiceRequest');
-const ICTSupportRequest = require('./ICTSupportRequest');
 const { DEVICE_TYPES } = require('./ICTSupportRequest');
-const MaintenanceRequest = require('./MaintenanceRequest');
 const { HAZARD_LEVELS } = require('./MaintenanceRequest');
-const CleaningRequest = require('./CleaningRequest');
 
 const ServiceRequestManager = require('./ServiceRequestManager');
+const ReportService = require('./ReportService');
+
+const UserFileRepository = require('./repositories/UserFileRepository');
+const ServiceRequestFileRepository = require('./repositories/ServiceRequestFileRepository');
+const RequestHistoryFileRepository = require('./repositories/RequestHistoryFileRepository');
+const AuditFileRepository = require('./repositories/AuditFileRepository');
+
+const DATA_DIR = path.join(__dirname, 'data');
 
 const rl = readline.createInterface({ input, output });
-const manager = new ServiceRequestManager();
+
+const manager = new ServiceRequestManager({
+  userRepo: new UserFileRepository(path.join(DATA_DIR, 'users.json')),
+  requestRepo: new ServiceRequestFileRepository(path.join(DATA_DIR, 'serviceRequests.json')),
+  historyRepo: new RequestHistoryFileRepository(path.join(DATA_DIR, 'requestHistory.json')),
+  auditRepo: new AuditFileRepository(path.join(DATA_DIR, 'auditLog.json')),
+});
+const reportService = new ReportService(manager);
 
 const MENU_TEXT = `
 ============================================
-     CAMPUS SERVICE REQUEST SYSTEM
+ CAMPUS SERVICE REQUEST SYSTEM (DISTINCTION)
 ============================================
  1. Register User
  2. Submit Service Request
@@ -37,7 +49,9 @@ const MENU_TEXT = `
 10. Service Officer Actions
 11. Technician Actions
 12. View Request History
-13. Exit
+13. View Management Reports
+14. View Audit Log
+15. Exit
 ============================================`;
 
 async function ask(question) {
@@ -93,16 +107,11 @@ function printRequestList(requests) {
 }
 
 // ---------------- Option 1 ----------------
-
 async function registerUserFlow() {
   console.log('\n--- Register User ---');
   const role = await askFromList('Select a role:', [
-    'Student Requester',
-    'Staff Requester',
-    'Service Officer',
-    'Technician',
+    'Student Requester', 'Staff Requester', 'Service Officer', 'Technician',
   ]);
-
   const userId = await askRequired('User ID: ');
   const firstName = await askRequired('First name: ');
   const lastName = await askRequired('Last name: ');
@@ -124,12 +133,11 @@ async function registerUserFlow() {
     user = new Technician(userId, firstName, lastName, email, speciality);
   }
 
-  manager.registerUser(user);
+  await manager.registerUser(user);
   console.log(`\nUser registered successfully:\n${user.displayInfo()}`);
 }
 
 // ---------------- Option 2 ----------------
-
 async function submitRequestFlow() {
   console.log('\n--- Submit Service Request ---');
   const requesterId = await askRequired('Your User ID: ');
@@ -146,40 +154,38 @@ async function submitRequestFlow() {
   const priority = await askFromList('Select a priority:', PRIORITIES);
   const category = await askFromList('Select a category:', CATEGORIES);
 
-  let request;
+  const commonData = { requestId, requesterId, title, description, location, priority };
+  let specialisedData = {};
 
   if (category === 'ICT Support') {
-    const deviceType = await askFromList('Device type:', DEVICE_TYPES);
-    const systemName = await askRequired('System/service name (e.g. Student Portal): ');
-    request = new ICTSupportRequest(requestId, requester, title, description, location, priority, deviceType, systemName);
+    specialisedData.deviceType = await askFromList('Device type:', DEVICE_TYPES);
+    specialisedData.systemName = await askRequired('System/service name: ');
+    specialisedData.faultType = await askFromList('Fault type:', ['Hardware', 'Software', 'Network', 'Account/Access', 'Other']);
+    specialisedData.networkImpact = await askYesNo('Does this affect the network for multiple users?');
   } else if (category === 'Facilities Maintenance') {
-    const building = await askRequired('Building: ');
-    const roomNumber = await askRequired('Room number: ');
-    const hazardLevel = await askFromList('Hazard level:', HAZARD_LEVELS);
-    request = new MaintenanceRequest(requestId, requester, title, description, location, priority, building, roomNumber, hazardLevel);
+    specialisedData.building = await askRequired('Building: ');
+    specialisedData.roomNumber = await askRequired('Room number: ');
+    specialisedData.hazardLevel = await askFromList('Hazard level:', HAZARD_LEVELS);
+    specialisedData.equipmentAffected = await ask('Equipment affected (optional): ');
   } else if (category === 'Cleaning and Sanitation') {
-    const cleaningArea = await askRequired('Cleaning area (e.g. Toilet, Cafeteria): ');
-    const hygieneRisk = await askYesNo('Is this a hygiene risk (e.g. spill, waste)?');
-    request = new CleaningRequest(requestId, requester, title, description, location, priority, cleaningArea, hygieneRisk);
+    specialisedData.cleaningArea = await askRequired('Cleaning area: ');
+    specialisedData.hygieneRisk = await askYesNo('Is this a hygiene risk (spill, waste)?');
+    specialisedData.serviceType = await ask('Service type (optional): ');
+    specialisedData.preferredServiceTime = await ask('Preferred service time (optional): ');
   } else {
-    request = new ServiceRequest(requestId, requester, title, description, location, category, priority);
+    specialisedData.generalServiceType = await askRequired('General service type: ');
   }
 
-  manager.submitRequest(request);
+  const request = await manager.submitRequest(category, commonData, specialisedData);
   console.log(`\nRequest submitted successfully:\n${request.getRequestSummary()}`);
 }
-
-// ---------------- Options 3-9 ----------------
 
 async function viewRequestByIdFlow() {
   console.log('\n--- View Request by ID ---');
   const requestId = await askRequired('Request ID: ');
   const request = manager.findRequestById(requestId);
-  if (!request) {
-    console.log(`No request found with ID "${requestId}".`);
-  } else {
-    console.log(`\n${request.getRequestSummary()}`);
-  }
+  if (!request) console.log(`No request found with ID "${requestId}".`);
+  else console.log(`\n${request.getRequestSummary()}`);
 }
 
 async function viewMyRequestsFlow() {
@@ -197,18 +203,15 @@ async function updateRequestFlow() {
   console.log('\n--- Update My Request ---');
   const userId = await askRequired('Your User ID: ');
   const requestId = await askRequired('Request ID to update: ');
-
   console.log('Leave a field blank to keep its current value.');
   const title = await ask('New title: ');
   const description = await ask('New description: ');
   const location = await ask('New campus location: ');
-
   const changes = {};
   if (title) changes.title = title;
   if (description) changes.description = description;
   if (location) changes.location = location;
-
-  const updated = manager.updateRequest(requestId, userId, changes);
+  const updated = await manager.updateRequest(requestId, userId, changes);
   console.log(`\nRequest updated successfully:\n${updated.getRequestSummary()}`);
 }
 
@@ -216,13 +219,13 @@ async function cancelRequestFlow() {
   console.log('\n--- Cancel My Request ---');
   const userId = await askRequired('Your User ID: ');
   const requestId = await askRequired('Request ID to cancel: ');
-  const cancelled = manager.cancelRequest(requestId, userId);
+  const cancelled = await manager.cancelRequest(requestId, userId);
   console.log(`\nRequest ${cancelled.getRequestId()} is now "${cancelled.getStatus()}".`);
 }
 
 async function searchRequestsFlow() {
   console.log('\n--- Search Requests ---');
-  const term = await askRequired('Enter a keyword (title, description or ID): ');
+  const term = await askRequired('Enter a keyword (title or ID): ');
   printRequestList(manager.searchRequests(term));
 }
 
@@ -230,22 +233,16 @@ async function viewSummaryFlow() {
   console.log('\n--- Request Summary by Status ---');
   const summary = manager.getRequestSummaryByStatus();
   const statuses = Object.keys(summary);
-  if (statuses.length === 0) {
-    console.log('No requests have been submitted yet.');
-  } else {
-    for (const [status, count] of Object.entries(summary)) {
-      console.log(`  ${status.padEnd(12)}: ${count}`);
-    }
-  }
+  if (statuses.length === 0) console.log('No requests have been submitted yet.');
+  else for (const [status, count] of Object.entries(summary)) console.log(`  ${status.padEnd(12)}: ${count}`);
 }
 
 // ---------------- Option 10: Service Officer Actions ----------------
-
 async function serviceOfficerFlow() {
   console.log('\n--- Service Officer Actions ---');
   const officerId = await askRequired('Your Service Officer User ID: ');
   const officer = manager.findUserById(officerId);
-  if (!officer || !(officer instanceof ServiceOfficer)) {
+  if (!officer || officer.getRole() !== 'Service Officer') {
     console.log(`No Service Officer found with ID "${officerId}".`);
     return;
   }
@@ -253,49 +250,33 @@ async function serviceOfficerFlow() {
   let inSubmenu = true;
   while (inSubmenu) {
     const action = await askFromList('\nChoose an action:', [
-      'Review a request',
-      'Assign priority',
-      'Assign a Technician',
-      'Close a resolved request',
-      'Back to Main Menu',
+      'Review a request', 'Assign priority', 'Assign a Technician', 'Close a resolved request', 'Back to Main Menu',
     ]);
 
     if (action === 'Review a request') {
       await safely(async () => {
         const requestId = await askRequired('Request ID: ');
-        const request = manager.findRequestById(requestId);
-        if (!request) throw new Error(`No request found with ID "${requestId}".`);
-        officer.reviewRequest(request);
+        const request = await manager.reviewRequest(requestId, officerId);
         console.log(`\nRequest ${requestId} reviewed. Status: ${request.getStatus()}`);
       });
     } else if (action === 'Assign priority') {
       await safely(async () => {
         const requestId = await askRequired('Request ID: ');
-        const request = manager.findRequestById(requestId);
-        if (!request) throw new Error(`No request found with ID "${requestId}".`);
         const priority = await askFromList('Select new priority:', PRIORITIES);
-        officer.assignPriority(request, priority);
+        await manager.assignPriority(requestId, officerId, priority);
         console.log(`\nPriority updated to ${priority}.`);
       });
     } else if (action === 'Assign a Technician') {
       await safely(async () => {
         const requestId = await askRequired('Request ID: ');
-        const request = manager.findRequestById(requestId);
-        if (!request) throw new Error(`No request found with ID "${requestId}".`);
         const technicianId = await askRequired('Technician User ID: ');
-        const technician = manager.findUserById(technicianId);
-        if (!technician || !(technician instanceof Technician)) {
-          throw new Error(`No Technician found with ID "${technicianId}".`);
-        }
-        officer.assignTechnician(request, technician);
-        console.log(`\nRequest ${requestId} assigned to ${technician.getFullName()}.`);
+        const request = await manager.assignTechnician(requestId, officerId, technicianId);
+        console.log(`\nRequest ${requestId} assigned. Status: ${request.getStatus()}`);
       });
     } else if (action === 'Close a resolved request') {
       await safely(async () => {
         const requestId = await askRequired('Request ID: ');
-        const request = manager.findRequestById(requestId);
-        if (!request) throw new Error(`No request found with ID "${requestId}".`);
-        officer.closeRequest(request);
+        await manager.closeRequest(requestId, officerId);
         console.log(`\nRequest ${requestId} closed.`);
       });
     } else {
@@ -305,12 +286,11 @@ async function serviceOfficerFlow() {
 }
 
 // ---------------- Option 11: Technician Actions ----------------
-
 async function technicianFlow() {
   console.log('\n--- Technician Actions ---');
   const technicianId = await askRequired('Your Technician User ID: ');
   const technician = manager.findUserById(technicianId);
-  if (!technician || !(technician instanceof Technician)) {
+  if (!technician || technician.getRole() !== 'Technician') {
     console.log(`No Technician found with ID "${technicianId}".`);
     return;
   }
@@ -318,41 +298,29 @@ async function technicianFlow() {
   let inSubmenu = true;
   while (inSubmenu) {
     const action = await askFromList('\nChoose an action:', [
-      'View my assigned requests',
-      'Start work on a request',
-      'Add a progress note',
-      'Resolve a request',
-      'Back to Main Menu',
+      'View my assigned requests', 'Start work on a request', 'Add a progress note', 'Resolve a request', 'Back to Main Menu',
     ]);
 
     if (action === 'View my assigned requests') {
-      await safely(async () => {
-        printRequestList(manager.getRequestsByTechnician(technicianId));
-      });
+      printRequestList(manager.getRequestsByTechnician(technicianId));
     } else if (action === 'Start work on a request') {
       await safely(async () => {
         const requestId = await askRequired('Request ID: ');
-        const request = manager.findRequestById(requestId);
-        if (!request) throw new Error(`No request found with ID "${requestId}".`);
-        technician.startWork(request);
+        await manager.startWork(requestId, technicianId);
         console.log(`\nWork started on request ${requestId}.`);
       });
     } else if (action === 'Add a progress note') {
       await safely(async () => {
         const requestId = await askRequired('Request ID: ');
-        const request = manager.findRequestById(requestId);
-        if (!request) throw new Error(`No request found with ID "${requestId}".`);
         const note = await askRequired('Progress note: ');
-        technician.addProgressNote(request, note);
+        await manager.addProgressNote(requestId, technicianId, note);
         console.log(`\nProgress note added to request ${requestId}.`);
       });
     } else if (action === 'Resolve a request') {
       await safely(async () => {
         const requestId = await askRequired('Request ID: ');
-        const request = manager.findRequestById(requestId);
-        if (!request) throw new Error(`No request found with ID "${requestId}".`);
         const summary = await askRequired('Resolution summary: ');
-        technician.resolveRequest(request, summary);
+        await manager.resolveRequest(requestId, technicianId, summary);
         console.log(`\nRequest ${requestId} marked Resolved.`);
       });
     } else {
@@ -361,50 +329,87 @@ async function technicianFlow() {
   }
 }
 
-// ---------------- Option 12: View Request History ----------------
-
 async function viewHistoryFlow() {
   console.log('\n--- View Request History ---');
   const requestId = await askRequired('Request ID: ');
   const history = manager.getRequestHistory(requestId);
   history.forEach((entry, i) => {
-    console.log(`  ${i + 1}. [${entry.status}] ${entry.action} (${entry.timestamp.toLocaleString()})`);
+    console.log(`  ${i + 1}. [${entry.newStatus}] ${entry.action} (actor: ${entry.actorId ?? 'n/a'}) - ${new Date(entry.timestamp).toLocaleString()}`);
+  });
+}
+
+// ---------------- Option 13: Management Reports ----------------
+async function viewReportsFlow() {
+  const report = reportService.fullReport();
+  console.log('\n============== MANAGEMENT REPORTS ==============');
+  console.log(`Generated at        : ${report.generatedAt}`);
+  console.log(`Total requests      : ${report.totalRequests}`);
+  console.log(`Total users         : ${report.totalUsers}`);
+  console.log(`Average resolution  : ${report.averageResolutionHours}h`);
+  console.log(`Urgent requests     : ${report.urgentCount}`);
+  console.log(`Overdue requests    : ${report.overdueCount}`);
+  console.log('\nRequests by status:');
+  for (const [k, v] of Object.entries(report.byStatus)) console.log(`  ${k.padEnd(12)}: ${v}`);
+  console.log('\nRequests by category:');
+  for (const [k, v] of Object.entries(report.byCategory)) console.log(`  ${k.padEnd(26)}: ${v}`);
+  console.log('\nRequests by priority:');
+  for (const [k, v] of Object.entries(report.byPriority)) console.log(`  ${k.padEnd(10)}: ${v}`);
+  console.log('\nActive requests by Technician:');
+  for (const [k, v] of Object.entries(report.requestsByTechnician)) console.log(`  ${k}: ${v}`);
+  console.log('\nCompleted requests by Technician:');
+  for (const [k, v] of Object.entries(report.completedByTechnician)) console.log(`  ${k}: ${v}`);
+  console.log('\nRequest volume by campus location:');
+  report.volumeByLocation.forEach((row) => console.log(`  ${row.location.padEnd(20)}: ${row.count}`));
+}
+
+// ---------------- Option 14: Audit Log ----------------
+async function viewAuditLogFlow() {
+  console.log('\n--- View Audit Log ---');
+  const filterChoice = await askFromList('Filter by:', ['All entries', 'Request ID', 'Actor ID']);
+  let entries = await manager.auditRepository.loadAll();
+  if (filterChoice === 'Request ID') {
+    const requestId = await askRequired('Request ID: ');
+    entries = entries.filter((e) => e.requestId === requestId);
+  } else if (filterChoice === 'Actor ID') {
+    const actorId = await askRequired('Actor ID: ');
+    entries = entries.filter((e) => e.actorId === actorId);
+  }
+  if (entries.length === 0) {
+    console.log('(no audit entries found)');
+    return;
+  }
+  entries.forEach((e) => {
+    console.log(`  [${e.auditId}] ${e.timestamp} | ${e.actorId ?? 'n/a'} (${e.actorRole ?? 'n/a'}) | ${e.action} | Request: ${e.requestId ?? 'n/a'} | ${e.description} | ${e.outcome}`);
   });
 }
 
 // ---------------- Main loop ----------------
-
 async function main() {
+  await safely(async () => {
+    const result = await manager.init();
+    console.log(`Loaded ${result.usersLoaded} user(s) and ${result.requestsLoaded} request(s) from ${DATA_DIR}.`);
+  });
+
   let running = true;
   while (running) {
     console.log(MENU_TEXT);
-    const choice = await ask('Enter your choice (1-13): ');
+    const choice = await ask('Enter your choice (1-15): ');
 
-    if (choice === '1') {
-      await safely(registerUserFlow);
-    } else if (choice === '2') {
-      await safely(submitRequestFlow);
-    } else if (choice === '3') {
-      await safely(viewRequestByIdFlow);
-    } else if (choice === '4') {
-      await safely(viewMyRequestsFlow);
-    } else if (choice === '5') {
-      await safely(viewAllRequestsFlow);
-    } else if (choice === '6') {
-      await safely(updateRequestFlow);
-    } else if (choice === '7') {
-      await safely(cancelRequestFlow);
-    } else if (choice === '8') {
-      await safely(searchRequestsFlow);
-    } else if (choice === '9') {
-      await safely(viewSummaryFlow);
-    } else if (choice === '10') {
-      await safely(serviceOfficerFlow);
-    } else if (choice === '11') {
-      await safely(technicianFlow);
-    } else if (choice === '12') {
-      await safely(viewHistoryFlow);
-    } else if (choice === '13') {
+    if (choice === '1') await safely(registerUserFlow);
+    else if (choice === '2') await safely(submitRequestFlow);
+    else if (choice === '3') await safely(viewRequestByIdFlow);
+    else if (choice === '4') await safely(viewMyRequestsFlow);
+    else if (choice === '5') await safely(viewAllRequestsFlow);
+    else if (choice === '6') await safely(updateRequestFlow);
+    else if (choice === '7') await safely(cancelRequestFlow);
+    else if (choice === '8') await safely(searchRequestsFlow);
+    else if (choice === '9') await safely(viewSummaryFlow);
+    else if (choice === '10') await safely(serviceOfficerFlow);
+    else if (choice === '11') await safely(technicianFlow);
+    else if (choice === '12') await safely(viewHistoryFlow);
+    else if (choice === '13') await safely(viewReportsFlow);
+    else if (choice === '14') await safely(viewAuditLogFlow);
+    else if (choice === '15') {
       console.log('\nGoodbye!');
       running = false;
     } else {
