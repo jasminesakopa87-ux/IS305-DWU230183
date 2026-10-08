@@ -354,7 +354,7 @@ async function viewReportsFlow() {
   for (const [k, v] of Object.entries(report.byCategory)) console.log(`  ${k.padEnd(26)}: ${v}`);
   console.log('\nRequests by priority:');
   for (const [k, v] of Object.entries(report.byPriority)) console.log(`  ${k.padEnd(10)}: ${v}`);
-  console.log('\nActive requests by Technician:');
+    console.log('\nRequests assigned to each Technician (all statuses):');
   for (const [k, v] of Object.entries(report.requestsByTechnician)) console.log(`  ${k}: ${v}`);
   console.log('\nCompleted requests by Technician:');
   for (const [k, v] of Object.entries(report.completedByTechnician)) console.log(`  ${k}: ${v}`);

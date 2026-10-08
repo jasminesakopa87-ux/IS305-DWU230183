@@ -1,0 +1,31 @@
+[
+  {
+    "role": "Student Requester",
+    "userId": "U001",
+    "firstName": "Alice",
+    "lastName": "Tau",
+    "email": "alice@dwu.ac.pg",
+    "userType": "Student",
+    "programme": "Information Systems",
+    "yearLevel": 3
+  },
+  {
+    "role": "Service Officer",
+    "userId": "U002",
+    "firstName": "Peter",
+    "lastName": "Pan",
+    "email": "peter@dwu.ac.pg",
+    "userType": "Service Officer",
+    "serviceSection": "ICT Help-Desk"
+  },
+  {
+    "role": "Technician",
+    "userId": "U003",
+    "firstName": "Grace",
+    "lastName": "Gordan",
+    "email": "grace@dwu.ac.pg",
+    "userType": "Technician",
+    "technicalSpeciality": "Networking",
+    "available": true
+  }
+]

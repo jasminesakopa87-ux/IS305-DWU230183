@@ -1,0 +1,87 @@
+[
+  {
+    "requestId": "R001",
+    "requestType": "ICTSupportRequest",
+    "requesterId": "U001",
+    "requesterName": "Alice Tau",
+    "title": "Wi-fi down",
+    "description": "No Wi-Fi in the library",
+    "location": "Library",
+    "category": "ICT Support",
+    "priority": "High",
+    "status": "Closed",
+    "assignedTechnicianId": "U003",
+    "assignedTechnicianName": "Grace Gordan",
+    "progressNotes": [
+      {
+        "note": "Replace the faulty access point",
+        "timestamp": "2026-10-08T00:37:48.426Z"
+      }
+    ],
+    "resolutionSummary": "Access point replaced, connectivity restored",
+    "dateSubmitted": "2026-10-08T00:35:02.619Z",
+    "dateUpdated": "2026-10-08T00:39:05.381Z",
+    "history": [
+      {
+        "previousStatus": null,
+        "newStatus": "Submitted",
+        "action": "Request submitted.",
+        "actorId": "U001",
+        "actorRole": "Student Requester",
+        "timestamp": "2026-10-08T00:35:02.620Z"
+      },
+      {
+        "previousStatus": "Submitted",
+        "newStatus": "Reviewed",
+        "action": "Request reviewed.",
+        "actorId": "U002",
+        "actorRole": "Service Officer",
+        "timestamp": "2026-10-08T00:36:06.816Z"
+      },
+      {
+        "previousStatus": "Reviewed",
+        "newStatus": "Assigned",
+        "action": "Assigned to Grace Gordan.",
+        "actorId": "U002",
+        "actorRole": "Service Officer",
+        "timestamp": "2026-10-08T00:36:51.626Z"
+      },
+      {
+        "previousStatus": "Assigned",
+        "newStatus": "InProgress",
+        "action": "Work started.",
+        "actorId": "U003",
+        "actorRole": "Technician",
+        "timestamp": "2026-10-08T00:37:31.793Z"
+      },
+      {
+        "previousStatus": "InProgress",
+        "newStatus": "InProgress",
+        "action": "Progress note: Replace the faulty access point",
+        "actorId": "U003",
+        "actorRole": "Technician",
+        "timestamp": "2026-10-08T00:37:48.426Z"
+      },
+      {
+        "previousStatus": "InProgress",
+        "newStatus": "Resolved",
+        "action": "Request resolved.",
+        "actorId": "U003",
+        "actorRole": "Technician",
+        "timestamp": "2026-10-08T00:38:21.409Z"
+      },
+      {
+        "previousStatus": "Resolved",
+        "newStatus": "Closed",
+        "action": "Request closed and verified.",
+        "actorId": "U002",
+        "actorRole": "Service Officer",
+        "timestamp": "2026-10-08T00:39:05.381Z"
+      }
+    ],
+    "deviceType": "Network Equipment",
+    "systemName": "Campus Wi-Fi",
+    "faultType": "Network",
+    "networkImpact": true
+  }
+]

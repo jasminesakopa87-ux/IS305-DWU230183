@@ -1,0 +1,72 @@
+[
+  {
+    "historyId": "HIST-1",
+    "requestId": "R001",
+    "previousStatus": null,
+    "newStatus": "Submitted",
+    "action": "Request submitted.",
+    "actorId": "U001",
+    "actorRole": "Student Requester",
+    "timestamp": "2026-10-08T00:35:02.620Z"
+  },
+  {
+    "historyId": "HIST-2",
+    "requestId": "R001",
+    "previousStatus": "Submitted",
+    "newStatus": "Reviewed",
+    "action": "Request reviewed.",
+    "actorId": "U002",
+    "actorRole": "Service Officer",
+    "timestamp": "2026-10-08T00:36:06.816Z"
+  },
+  {
+    "historyId": "HIST-3",
+    "requestId": "R001",
+    "previousStatus": "Reviewed",
+    "newStatus": "Assigned",
+    "action": "Assigned to Grace Gordan.",
+    "actorId": "U002",
+    "actorRole": "Service Officer",
+    "timestamp": "2026-10-08T00:36:51.626Z"
+  },
+  {
+    "historyId": "HIST-4",
+    "requestId": "R001",
+    "previousStatus": "Assigned",
+    "newStatus": "InProgress",
+    "action": "Work started.",
+    "actorId": "U003",
+    "actorRole": "Technician",
+    "timestamp": "2026-10-08T00:37:31.793Z"
+  },
+  {
+    "historyId": "HIST-5",
+    "requestId": "R001",
+    "previousStatus": "InProgress",
+    "newStatus": "InProgress",
+    "action": "Progress note: Replace the faulty access point",
+    "actorId": "U003",
+    "actorRole": "Technician",
+    "timestamp": "2026-10-08T00:37:48.426Z"
+  },
+  {
+    "historyId": "HIST-6",
+    "requestId": "R001",
+    "previousStatus": "InProgress",
+    "newStatus": "Resolved",
+    "action": "Request resolved.",
+    "actorId": "U003",
+    "actorRole": "Technician",
+    "timestamp": "2026-10-08T00:38:21.409Z"
+  },
+  {
+    "historyId": "HIST-7",
+    "requestId": "R001",
+    "previousStatus": "Resolved",
+    "newStatus": "Closed",
+    "action": "Request closed and verified.",
+    "actorId": "U002",
+    "actorRole": "Service Officer",
+    "timestamp": "2026-10-08T00:39:05.381Z"
+  }
+]

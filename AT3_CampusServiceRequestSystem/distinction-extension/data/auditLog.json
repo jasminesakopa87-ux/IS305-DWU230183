@@ -1,0 +1,102 @@
+[
+  {
+    "auditId": "AUD-1",
+    "actorId": "U001",
+    "actorRole": "Student Requester",
+    "action": "User Registration",
+    "requestId": null,
+    "description": "Registered as Student Requester.",
+    "timestamp": "2026-10-08T00:26:53.545Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-2",
+    "actorId": "U002",
+    "actorRole": "Service Officer",
+    "action": "User Registration",
+    "requestId": null,
+    "description": "Registered as Service Officer.",
+    "timestamp": "2026-10-08T00:28:19.440Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-3",
+    "actorId": "U003",
+    "actorRole": "Technician",
+    "action": "User Registration",
+    "requestId": null,
+    "description": "Registered as Technician.",
+    "timestamp": "2026-10-08T00:29:06.974Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-4",
+    "actorId": "U001",
+    "actorRole": "Student Requester",
+    "action": "Request Creation",
+    "requestId": "R001",
+    "description": "Submitted \"Wi-fi down\".",
+    "timestamp": "2026-10-08T00:35:02.647Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-5",
+    "actorId": "U002",
+    "actorRole": "Service Officer",
+    "action": "Status Change",
+    "requestId": "R001",
+    "description": "Request reviewed.",
+    "timestamp": "2026-10-08T00:36:06.825Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-6",
+    "actorId": "U002",
+    "actorRole": "Service Officer",
+    "action": "Technician Assignment",
+    "requestId": "R001",
+    "description": "Assigned to Grace Gordan.",
+    "timestamp": "2026-10-08T00:36:51.634Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-7",
+    "actorId": "U003",
+    "actorRole": "Technician",
+    "action": "Status Change",
+    "requestId": "R001",
+    "description": "Work started.",
+    "timestamp": "2026-10-08T00:37:31.801Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-8",
+    "actorId": "U003",
+    "actorRole": "Technician",
+    "action": "Request Update",
+    "requestId": "R001",
+    "description": "Progress note: Replace the faulty access point",
+    "timestamp": "2026-10-08T00:37:48.433Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-9",
+    "actorId": "U003",
+    "actorRole": "Technician",
+    "action": "Request Resolution",
+    "requestId": "R001",
+    "description": "Request resolved.",
+    "timestamp": "2026-10-08T00:38:21.416Z",
+    "outcome": "Success"
+  },
+  {
+    "auditId": "AUD-10",
+    "actorId": "U002",
+    "actorRole": "Service Officer",
+    "action": "Request Closure",
+    "requestId": "R001",
+    "description": "Request closed.",
+    "timestamp": "2026-10-08T00:39:05.388Z",
+    "outcome": "Success"
+  }
+]
