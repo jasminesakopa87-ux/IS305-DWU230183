@@ -11,7 +11,10 @@ const path = require('node:path');
 
 async function loadJSONArray(filePath) {
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
+        const content = await fs.readFile(filePath, 'utf-8');
+    if (content.trim().length === 0) {
+      return [];
+    }
     const parsed = JSON.parse(content);
     if (!Array.isArray(parsed)) {
       throw new Error(`File Error: "${filePath}" does not contain a JSON array.`);
