@@ -9,7 +9,7 @@ const StaffRequester = require('./StaffRequester');
 const ServiceOfficer = require('./ServiceOfficer');
 const Technician = require('./Technician');
 
-const { CATEGORIES, PRIORITIES } = require('./ServiceRequest');
+const { CATEGORIES, PRIORITIES, STATUSES } = require('./ServiceRequest');
 const { DEVICE_TYPES } = require('./ICTSupportRequest');
 const { HAZARD_LEVELS } = require('./MaintenanceRequest');
 
@@ -51,7 +51,8 @@ const MENU_TEXT = `
 12. View Request History
 13. View Management Reports
 14. View Audit Log
-15. Exit
+15. Filter / Sort Requests
+16. Exit
 ============================================`;
 
 async function ask(question) {
@@ -103,6 +104,16 @@ function printRequestList(requests) {
   requests.forEach((r) => {
     console.log(r.getRequestSummary());
     console.log('--------------------------------------------------------');
+  });
+}
+
+function printRankedList(requests, describe) {
+  if (requests.length === 0) {
+    console.log('(no requests found)');
+    return;
+  }
+  requests.forEach((r, i) => {
+    console.log(`  ${i + 1}. [${r.getRequestId()}] ${r.getTitle()} - ${describe(r)}`);
   });
 }
 
@@ -354,7 +365,7 @@ async function viewReportsFlow() {
   for (const [k, v] of Object.entries(report.byCategory)) console.log(`  ${k.padEnd(26)}: ${v}`);
   console.log('\nRequests by priority:');
   for (const [k, v] of Object.entries(report.byPriority)) console.log(`  ${k.padEnd(10)}: ${v}`);
-    console.log('\nRequests assigned to each Technician (all statuses):');
+  console.log('\nRequests assigned to each Technician (all statuses):');
   for (const [k, v] of Object.entries(report.requestsByTechnician)) console.log(`  ${k}: ${v}`);
   console.log('\nCompleted requests by Technician:');
   for (const [k, v] of Object.entries(report.completedByTechnician)) console.log(`  ${k}: ${v}`);
@@ -383,6 +394,43 @@ async function viewAuditLogFlow() {
   });
 }
 
+// ---------------- Option 15: Filter / Sort Requests ----------------
+async function filterSortFlow() {
+  console.log('\n--- Filter / Sort Requests ---');
+  const action = await askFromList('Choose an option:', [
+    'Filter by category',
+    'Filter by status',
+    'Filter by priority',
+    'Filter by assigned Technician',
+    'Sort by date submitted (oldest first)',
+    'Sort by date submitted (newest first)',
+    'Sort by priority score (highest first)',
+  ]);
+
+  if (action === 'Filter by category') {
+    const category = await askFromList('Select a category:', CATEGORIES);
+    printRequestList(manager.filterByCategory(category));
+  } else if (action === 'Filter by status') {
+    const status = await askFromList('Select a status:', STATUSES);
+    printRequestList(manager.filterByStatus(status));
+  } else if (action === 'Filter by priority') {
+    const priority = await askFromList('Select a priority:', PRIORITIES);
+    printRequestList(manager.filterByPriority(priority));
+  } else if (action === 'Filter by assigned Technician') {
+    const technicianId = await askRequired('Technician User ID: ');
+    printRequestList(manager.getRequestsByTechnician(technicianId));
+  } else if (action === 'Sort by date submitted (oldest first)') {
+    printRankedList(manager.sortByDateSubmitted(undefined, true), (r) => r.getDateSubmitted().toLocaleString());
+  } else if (action === 'Sort by date submitted (newest first)') {
+    printRankedList(manager.sortByDateSubmitted(undefined, false), (r) => r.getDateSubmitted().toLocaleString());
+  } else {
+    printRankedList(
+      manager.sortByPriorityScore(),
+      (r) => `score ${r.calculatePriorityScore()} (${r.getPriority()}, ${r.getCategory()})`
+    );
+  }
+}
+
 // ---------------- Main loop ----------------
 async function main() {
   await safely(async () => {
@@ -393,7 +441,7 @@ async function main() {
   let running = true;
   while (running) {
     console.log(MENU_TEXT);
-    const choice = await ask('Enter your choice (1-15): ');
+    const choice = await ask('Enter your choice (1-16): ');
 
     if (choice === '1') await safely(registerUserFlow);
     else if (choice === '2') await safely(submitRequestFlow);
@@ -409,7 +457,8 @@ async function main() {
     else if (choice === '12') await safely(viewHistoryFlow);
     else if (choice === '13') await safely(viewReportsFlow);
     else if (choice === '14') await safely(viewAuditLogFlow);
-    else if (choice === '15') {
+    else if (choice === '15') await safely(filterSortFlow);
+    else if (choice === '16') {
       console.log('\nGoodbye!');
       running = false;
     } else {
