@@ -1,0 +1,23 @@
+sequenceDiagram
+    actor O as Service Officer
+    participant App as CampusServiceApp
+    participant Mgr as ServiceRequestManager
+    participant Req as ServiceRequest (status Reviewed)
+    participant RR as ServiceRequestFileRepository
+    participant HR as RequestHistoryFileRepository
+    participant AR as AuditFileRepository
+
+    O->>App: Service Officer Actions > Assign a Technician (Request ID, Technician ID)
+    App->>Mgr: assignTechnician(requestId, officerId, technicianId)
+    Mgr->>Mgr: requireRequest(), requireUser(officer), requireUser(technician)
+    Mgr->>Req: assignTechnician(technician, officer)
+    Req->>Req: requireRole(officer, "Service Officer") - throws otherwise
+    Req->>Req: transitionTo("Assigned") - only allowed from Reviewed
+    Req->>Req: addHistory(Reviewed to Assigned, actor = officer)
+    Req-->>Mgr: request (status Assigned)
+    Mgr->>RR: replace(requestId, request.toJSON())
+    Mgr->>HR: create(latest history entry)
+    Mgr->>AR: create(audit entry "Technician Assignment")
+    Mgr-->>App: request
+    App-->>O: "Request assigned. Status: Assigned"
+    Note over Req: A Technician or Requester calling this is rejected before any state changes.

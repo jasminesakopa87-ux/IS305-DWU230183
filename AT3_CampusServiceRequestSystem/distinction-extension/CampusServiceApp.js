@@ -462,7 +462,7 @@ async function main() {
       console.log('\nGoodbye!');
       running = false;
     } else {
-      console.log(`\nYou chose option ${choice} - not wired up yet.`);
+            console.log(`\nInvalid choice "${choice}". Please enter a number from 1 to 16.`);
     }
   }
   rl.close();

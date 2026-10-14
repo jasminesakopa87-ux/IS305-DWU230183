@@ -1,0 +1,246 @@
+classDiagram
+    class User {
+        -userId
+        -firstName
+        -lastName
+        -email
+        -userType
+        +getUserId()
+        +getFullName()
+        +getRole()
+        +setEmail(email)
+        +validate()
+        +displayInfo()
+        +toJSON()
+    }
+    class StudentRequester {
+        -programme
+        -yearLevel
+        +getRole()
+        +toJSON()
+        +fromJSON(data)$
+    }
+    class StaffRequester {
+        -department
+        +getRole()
+        +toJSON()
+        +fromJSON(data)$
+    }
+    class ServiceOfficer {
+        -serviceSection
+        +getRole()
+        +reviewRequest(request)
+        +assignPriority(request, priority)
+        +assignTechnician(request, technician)
+        +closeRequest(request)
+        +toJSON()
+        +fromJSON(data)$
+    }
+    class Technician {
+        -technicalSpeciality
+        -available
+        +getRole()
+        +isAvailable()
+        +startWork(request)
+        +addProgressNote(request, note)
+        +resolveRequest(request, summary)
+        +toJSON()
+        +fromJSON(data)$
+    }
+    User <|-- StudentRequester
+    User <|-- StaffRequester
+    User <|-- ServiceOfficer
+    User <|-- Technician
+
+    class UserFactory {
+        +createFromData(savedData)$
+    }
+    UserFactory ..> StudentRequester : creates
+    UserFactory ..> StaffRequester : creates
+    UserFactory ..> ServiceOfficer : creates
+    UserFactory ..> Technician : creates
+
+    class ServiceRequest {
+        <<abstract>>
+        -requestId
+        -requester
+        -title
+        -description
+        -location
+        -category
+        -priority
+        -status
+        -assignedTechnician
+        -progressNotes
+        -resolutionSummary
+        -history
+        +getRequestType()
+        +getStatus()
+        +validateCommon()
+        +validateSpecialisedFields()*
+        +calculatePriorityScore()*
+        +getTargetResolutionHours()*
+        +getRequestSummary()*
+        +getBasePriorityScore()
+        +getBaseSummary()
+        +updateDetails(changes, actor)
+        +cancelRequest(actor)
+        +review(actor)
+        +setPriority(priority, actor)
+        +assignTechnician(technician, actor)
+        +startWork(technician)
+        +addProgressNote(note, technician)
+        +resolve(summary, technician)
+        +close(actor)
+        +getHistory()
+        +toJSON()
+        +_restoreState(savedData)
+    }
+    class ICTSupportRequest {
+        -deviceType
+        -systemName
+        -faultType
+        -networkImpact
+        +validateSpecialisedFields()
+        +calculatePriorityScore()
+        +getTargetResolutionHours()
+        +getRequestSummary()
+        +toJSON()
+    }
+    class MaintenanceRequest {
+        -building
+        -roomNumber
+        -hazardLevel
+        -equipmentAffected
+        +validateSpecialisedFields()
+        +calculatePriorityScore()
+        +getTargetResolutionHours()
+        +getRequestSummary()
+        +toJSON()
+    }
+    class CleaningRequest {
+        -cleaningArea
+        -hygieneRisk
+        -serviceType
+        -preferredServiceTime
+        +hasHygieneRisk()
+        +validateSpecialisedFields()
+        +calculatePriorityScore()
+        +getTargetResolutionHours()
+        +getRequestSummary()
+        +toJSON()
+    }
+    class GeneralServiceRequest {
+        -generalServiceType
+        +validateSpecialisedFields()
+        +calculatePriorityScore()
+        +getTargetResolutionHours()
+        +getRequestSummary()
+        +toJSON()
+    }
+    ServiceRequest <|-- ICTSupportRequest
+    ServiceRequest <|-- MaintenanceRequest
+    ServiceRequest <|-- CleaningRequest
+    ServiceRequest <|-- GeneralServiceRequest
+
+    class ServiceRequestFactory {
+        +createRequest(category, commonData, specialisedData)$
+        +createFromData(savedData, requesterRef)$
+    }
+    ServiceRequestFactory ..> ICTSupportRequest : creates
+    ServiceRequestFactory ..> MaintenanceRequest : creates
+    ServiceRequestFactory ..> CleaningRequest : creates
+    ServiceRequestFactory ..> GeneralServiceRequest : creates
+
+    class BaseFileRepository {
+        -filePath
+        -idField
+        +loadAll()
+        +saveAll(records)
+        +findById(id)
+        +create(record)
+        +update(id, changes)
+        +replace(id, record)
+    }
+    class UserFileRepository {
+        +findByRole(role)
+    }
+    class ServiceRequestFileRepository {
+        +findByRequester(userId)
+        +findByTechnician(technicianId)
+        +findByStatus(status)
+    }
+    class RequestHistoryFileRepository {
+        +findByRequestId(requestId)
+    }
+    class AuditFileRepository {
+        +findByRequestId(requestId)
+        +findByActor(actorId)
+    }
+    BaseFileRepository <|-- UserFileRepository
+    BaseFileRepository <|-- ServiceRequestFileRepository
+    BaseFileRepository <|-- RequestHistoryFileRepository
+    BaseFileRepository <|-- AuditFileRepository
+
+    class fileStore {
+        <<module>>
+        +loadJSONArray(filePath)
+        +saveJSONArray(filePath, records)
+    }
+    BaseFileRepository ..> fileStore : only file I/O
+
+    class ServiceRequestManager {
+        -users
+        -requests
+        +init()
+        +registerUser(user)
+        +findUserById(userId)
+        +getUsersByType(role)
+        +submitRequest(category, commonData, specialisedData)
+        +findRequestById(requestId)
+        +getRequestsByUser(userId)
+        +getRequestsByTechnician(technicianId)
+        +updateRequest(requestId, userId, changes)
+        +cancelRequest(requestId, userId)
+        +reviewRequest(requestId, officerId)
+        +assignPriority(requestId, officerId, priority)
+        +assignTechnician(requestId, officerId, technicianId)
+        +closeRequest(requestId, officerId)
+        +startWork(requestId, technicianId)
+        +addProgressNote(requestId, technicianId, note)
+        +resolveRequest(requestId, technicianId, summary)
+        +searchRequests(searchText)
+        +filterByCategory(category)
+        +filterByStatus(status)
+        +filterByPriority(priority)
+        +sortByPriorityScore(requests)
+        +sortByDateSubmitted(requests, ascending)
+        +getRequestSummaryByStatus()
+        +getRequestHistory(requestId)
+    }
+    ServiceRequestManager "1" *-- "many" User : holds in memory
+    ServiceRequestManager "1" *-- "many" ServiceRequest : holds in memory
+    ServiceRequestManager "1" o-- "4" BaseFileRepository : persists through
+    ServiceRequestManager ..> UserFactory : restores users
+    ServiceRequestManager ..> ServiceRequestFactory : creates and restores
+
+    class ReportService {
+        +requestsByStatus()
+        +requestsByCategory()
+        +requestsByPriority()
+        +urgentRequests()
+        +overdueRequests()
+        +requestsByTechnician()
+        +completedRequestsByTechnician()
+        +averageResolutionHours()
+        +requestVolumeByLocation()
+        +fullReport()
+    }
+    ReportService ..> ServiceRequestManager : reads
+
+    class CampusServiceApp {
+        <<console>>
+        +main()
+    }
+    CampusServiceApp ..> ServiceRequestManager : uses
+    CampusServiceApp ..> ReportService : uses

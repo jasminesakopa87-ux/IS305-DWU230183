@@ -1,0 +1,56 @@
+flowchart LR
+    Student(["Student Requester"])
+    Staff(["Staff Requester"])
+    Officer(["Service Officer"])
+    Tech(["Technician"])
+    Admin(["System Administrator<br/>(reports and audit only)"])
+
+    UC1(("Register user"))
+    UC2(("Submit request"))
+    UC3(("View requests"))
+    UC4(("Update own request"))
+    UC5(("Cancel own request"))
+    UC6(("Search / filter / sort"))
+    UC7(("Review request"))
+    UC8(("Assign priority"))
+    UC9(("Assign Technician"))
+    UC10(("Verify and close"))
+    UC11(("Start work"))
+    UC12(("Add progress note"))
+    UC13(("Resolve request"))
+    UC14(("View management reports"))
+    UC15(("View audit log"))
+    UC16(("View request history"))
+
+    Student --- UC1
+    Student --- UC2
+    Student --- UC3
+    Student --- UC4
+    Student --- UC5
+    Student --- UC6
+    Staff --- UC1
+    Staff --- UC2
+    Staff --- UC3
+    Staff --- UC4
+    Staff --- UC5
+    Staff --- UC6
+    Officer --- UC1
+    Officer --- UC3
+    Officer --- UC6
+    Officer --- UC7
+    Officer --- UC8
+    Officer --- UC9
+    Officer --- UC10
+    Tech --- UC1
+    Tech --- UC3
+    Tech --- UC11
+    Tech --- UC12
+    Tech --- UC13
+    Admin --- UC14
+    Admin --- UC15
+    Admin --- UC16
+
+    UC9 -. "requires" .-> UC7
+    UC11 -. "requires" .-> UC9
+    UC13 -. "requires" .-> UC11
+    UC10 -. "requires" .-> UC13

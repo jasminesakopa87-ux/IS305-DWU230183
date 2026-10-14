@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor R as Student / Staff Requester
+    participant App as CampusServiceApp
+    participant Mgr as ServiceRequestManager
+    participant Fac as ServiceRequestFactory
+    participant Req as ICTSupportRequest
+    participant RR as ServiceRequestFileRepository
+    participant HR as RequestHistoryFileRepository
+    participant AR as AuditFileRepository
+
+    R->>App: choose "Submit Service Request" and answer the prompts
+    App->>Mgr: findUserById(requesterId)
+    App->>Mgr: submitRequest(category, commonData, specialisedData)
+    Mgr->>Mgr: findUserById(), findRequestById() - reject unknown requester or duplicate ID
+    Mgr->>Fac: createRequest(category, factoryInput, specialisedData)
+    Fac->>Req: new ICTSupportRequest(commonData, specialisedData)
+    Req->>Req: super(...) runs validateCommon() and records first history entry
+    Req->>Req: validateSpecialisedFields()
+    Req-->>Fac: request (status Submitted)
+    Fac-->>Mgr: request
+    Mgr->>RR: create(request.toJSON())
+    Mgr->>HR: create(latest history entry)
+    Mgr->>AR: create(audit entry "Request Creation")
+    Mgr-->>App: request
+    App-->>R: "Request submitted successfully" + getRequestSummary()
+    Note over Req,AR: If any validation throws, nothing is saved.

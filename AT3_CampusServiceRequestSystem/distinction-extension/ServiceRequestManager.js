@@ -73,8 +73,8 @@ class ServiceRequestManager {
       throw new Error(`Validation Error: A request with ID "${commonData.requestId}" already exists.`);
     }
 
-    const { ServiceRequestFactoryInput } = { ServiceRequestFactoryInput: { ...commonData, requester } };
-    const request = require('./ServiceRequestFactory').createRequest(category, ServiceRequestFactoryInput, specialisedData);
+       const factoryInput = { ...commonData, requester };
+    const request = ServiceRequestFactory.createRequest(category, factoryInput, specialisedData);
 
     this.#requests.push(request);
     await this.#requestRepo.create(request.toJSON());

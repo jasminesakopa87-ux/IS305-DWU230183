@@ -1,0 +1,38 @@
+sequenceDiagram
+    actor T as Assigned Technician
+    actor O as Service Officer
+    participant App as CampusServiceApp
+    participant Mgr as ServiceRequestManager
+    participant Tech as Technician
+    participant Req as ServiceRequest (InProgress)
+    participant RR as ServiceRequestFileRepository
+    participant AR as AuditFileRepository
+
+    rect rgb(235, 245, 255)
+    Note over T,AR: Part 1 - Technician resolves the work
+    T->>App: Technician Actions > Resolve a request (Request ID, summary)
+    App->>Mgr: resolveRequest(requestId, technicianId, summary)
+    Mgr->>Tech: resolveRequest(request, summary)
+    Tech->>Req: resolve(summary, technician)
+    Req->>Req: requireAssignedTechnician(technician) - must be THIS request's Technician
+    Req->>Req: transitionTo("Resolved"), addHistory(...)
+    Req-->>Mgr: request (status Resolved)
+    Mgr->>RR: replace(requestId, request.toJSON())
+    Mgr->>AR: create(audit entry "Request Resolution")
+    Mgr-->>App: request
+    App-->>T: "Request marked Resolved"
+    end
+
+    rect rgb(255, 245, 230)
+    Note over O,AR: Part 2 - Service Officer verifies and closes
+    O->>App: Service Officer Actions > Close a resolved request (Request ID)
+    App->>Mgr: closeRequest(requestId, officerId)
+    Mgr->>Req: close(officer)
+    Req->>Req: requireRole(officer, "Service Officer") and status must be Resolved
+    Req->>Req: transitionTo("Closed"), addHistory(...)
+    Req-->>Mgr: request (status Closed)
+    Mgr->>RR: replace(requestId, request.toJSON())
+    Mgr->>AR: create(audit entry "Request Closure")
+    Mgr-->>App: request
+    App-->>O: "Request closed."
+    end
