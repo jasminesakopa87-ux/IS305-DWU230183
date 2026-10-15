@@ -1,78 +1,365 @@
-﻿Γû╢ 1. Valid object construction
-  [32mΓ£ö DT-01 StudentRequester builds with correct role and fields [90m(2.9319ms)[39m[39m
-  [32mΓ£ö DT-02 ICTSupportRequest builds with default Submitted status [90m(1.0034ms)[39m[39m
-[32mΓ£ö 1. Valid object construction [90m(6.1425ms)[39m[39m
-Γû╢ 2. Invalid constructor values
-  [32mΓ£ö DT-03 invalid email is rejected [90m(0.6995ms)[39m[39m
-  [32mΓ£ö DT-04 missing title is rejected [90m(0.3408ms)[39m[39m
-  [32mΓ£ö DT-05 unsupported device type is rejected [90m(0.3492ms)[39m[39m
-[32mΓ£ö 2. Invalid constructor values [90m(1.7097ms)[39m[39m
-Γû╢ 3. Duplicate identifiers
-  [32mΓ£ö DT-06 duplicate user ID and duplicate request ID are both rejected [90m(69.7086ms)[39m[39m
-[32mΓ£ö 3. Duplicate identifiers [90m(70.381ms)[39m[39m
-Γû╢ 4. Role permissions
-  [32mΓ£ö DT-07 only a Service Officer may assign a Technician [90m(35.924ms)[39m[39m
-  [32mΓ£ö DT-08 only the assigned Technician may start work [90m(43.0353ms)[39m[39m
-  [32mΓ£ö DT-09 a requester cannot cancel or update someone else's request [90m(19.425ms)[39m[39m
-[32mΓ£ö 4. Role permissions [90m(99.1395ms)[39m[39m
-Γû╢ 5. Controlled status transitions
-  [32mΓ£ö DT-10 a request cannot skip steps or be closed before it is Resolved [90m(23.1961ms)[39m[39m
-  [32mΓ£ö DT-11 a Cancelled request is final and cannot be reviewed [90m(34.7754ms)[39m[39m
-[32mΓ£ö 5. Controlled status transitions [90m(58.4528ms)[39m[39m
-Γû╢ 6. Specialised request behaviour
-  [32mΓ£ö DT-12 Maintenance hazard level drives SLA and priority score [90m(0.809ms)[39m[39m
-  [32mΓ£ö DT-13 Cleaning hygiene risk shortens the SLA and raises the score [90m(0.456ms)[39m[39m
-[32mΓ£ö 6. Specialised request behaviour [90m(1.4059ms)[39m[39m
-Γû╢ 7. Polymorphism and abstraction
-  [32mΓ£ö DT-14 one loop works on a mixed collection of request types [90m(64.662ms)[39m[39m
-  [32mΓ£ö DT-15 ServiceRequest cannot be instantiated directly [90m(0.3559ms)[39m[39m
-  [32mΓ£ö DT-16 a subclass that does not override the abstract methods fails clearly [90m(0.4232ms)[39m[39m
-[32mΓ£ö 7. Polymorphism and abstraction [90m(65.6235ms)[39m[39m
-Γû╢ 8. Saving JSON data
-  [32mΓ£ö DT-17 registering users and submitting a request writes the JSON files [90m(60.3109ms)[39m[39m
-  [32mΓ£ö DT-18 workflow actions are saved to history and audit files [90m(61.7698ms)[39m[39m
-  [32mΓ£ö DT-19 a rejected action is NOT saved [90m(51.2975ms)[39m[39m
-[32mΓ£ö 8. Saving JSON data [90m(177.2747ms)[39m[39m
-Γû╢ 9. Loading and restoring saved objects
-  [32mΓ£ö DT-20 a new manager restores the correct classes, state and history [90m(58.5614ms)[39m[39m
-  [32mΓ£ö DT-21 a restored request can continue through the workflow [90m(89.8931ms)[39m[39m
-  [32mΓ£ö DT-22 new IDs continue after a restart instead of colliding [90m(29.0032ms)[39m[39m
-[32mΓ£ö 9. Loading and restoring saved objects [90m(178.4442ms)[39m[39m
-Γû╢ 10. Missing or empty data files
-  [32mΓ£ö DT-23 a missing file loads as an empty array [90m(4.0892ms)[39m[39m
-  [32mΓ£ö DT-24 a manager starts cleanly when no data files exist [90m(2.3305ms)[39m[39m
-  [32mΓ£ö DT-25 a zero-byte file and a file containing [] both load as empty [90m(5.1802ms)[39m[39m
-[32mΓ£ö 10. Missing or empty data files [90m(12.7501ms)[39m[39m
-Γû╢ 11. File-reading and file-writing errors
-  [32mΓ£ö DT-26 corrupt JSON gives a clear File Error [90m(4.3025ms)[39m[39m
-  [32mΓ£ö DT-27 valid JSON that is not an array is rejected [90m(3.0189ms)[39m[39m
-  [32mΓ£ö DT-28 saving non-array data is refused [90m(1.0409ms)[39m[39m
-  [32mΓ£ö DT-29 a write that cannot happen gives a clear File Error [90m(1.795ms)[39m[39m
-  [32mΓ£ö DT-30 repository rejects a duplicate id and an update of an unknown id [90m(7.7392ms)[39m[39m
-[32mΓ£ö 11. File-reading and file-writing errors [90m(18.5999ms)[39m[39m
-Γû╢ 12. Report calculations
-  [32mΓ£ö DT-31 requests grouped by status [90m(4.7977ms)[39m[39m
-  [32mΓ£ö DT-32 requests grouped by category and by priority [90m(0.7104ms)[39m[39m
-  [32mΓ£ö DT-33 urgent requests are listed [90m(0.4631ms)[39m[39m
-  [32mΓ£ö DT-34 request volume by location is counted and sorted busiest first [90m(0.93ms)[39m[39m
-  [32mΓ£ö DT-35 assigned and completed requests per Technician [90m(0.9512ms)[39m[39m
-  [32mΓ£ö DT-36 average resolution time is a sensible number [90m(1.1408ms)[39m[39m
-  [32mΓ£ö DT-37 overdue requests only include unfinished requests past their deadline [90m(1.4715ms)[39m[39m
-  [32mΓ£ö DT-38 full report totals [90m(0.709ms)[39m[39m
-[32mΓ£ö 12. Report calculations [90m(132.7961ms)[39m[39m
-Γû╢ 13. Search, filter and sort
-  [32mΓ£ö DT-39 search matches request ID or title, ignoring case [90m(5.6153ms)[39m[39m
-  [32mΓ£ö DT-40 filter by category, status and priority [90m(0.8888ms)[39m[39m
-  [32mΓ£ö DT-41 filter by assigned Technician [90m(0.5068ms)[39m[39m
-  [32mΓ£ö DT-42 sort by date submitted, oldest first and newest first [90m(0.5155ms)[39m[39m
-  [32mΓ£ö DT-43 sort by priority score uses each category's own scoring [90m(0.9355ms)[39m[39m
-  [32mΓ£ö DT-44 sorting does not change the stored order [90m(0.369ms)[39m[39m
-[32mΓ£ö 13. Search, filter and sort [90m(121.8027ms)[39m[39m
-[34mΓä╣ tests 44[39m
-[34mΓä╣ suites 13[39m
-[34mΓä╣ pass 44[39m
-[34mΓä╣ fail 0[39m
-[34mΓä╣ cancelled 0[39m
-[34mΓä╣ skipped 0[39m
-[34mΓä╣ todo 0[39m
-[34mΓä╣ duration_ms 604.4819[39m
+﻿TAP version 13
+# Subtest: 1. Valid object construction
+    # Subtest: DT-01 StudentRequester builds with correct role and fields
+    ok 1 - DT-01 StudentRequester builds with correct role and fields
+      ---
+      duration_ms: 4.2952
+      type: 'test'
+      ...
+    # Subtest: DT-02 ICTSupportRequest builds with default Submitted status
+    ok 2 - DT-02 ICTSupportRequest builds with default Submitted status
+      ---
+      duration_ms: 1.3371
+      type: 'test'
+      ...
+    1..2
+ok 1 - 1. Valid object construction
+  ---
+  duration_ms: 9.9855
+  type: 'suite'
+  ...
+# Subtest: 2. Invalid constructor values
+    # Subtest: DT-03 invalid email is rejected
+    ok 1 - DT-03 invalid email is rejected
+      ---
+      duration_ms: 1.3082
+      type: 'test'
+      ...
+    # Subtest: DT-04 missing title is rejected
+    ok 2 - DT-04 missing title is rejected
+      ---
+      duration_ms: 0.4942
+      type: 'test'
+      ...
+    # Subtest: DT-05 unsupported device type is rejected
+    ok 3 - DT-05 unsupported device type is rejected
+      ---
+      duration_ms: 0.526
+      type: 'test'
+      ...
+    1..3
+ok 2 - 2. Invalid constructor values
+  ---
+  duration_ms: 3.0215
+  type: 'suite'
+  ...
+# Subtest: 3. Duplicate identifiers
+    # Subtest: DT-06 duplicate user ID and duplicate request ID are both rejected
+    ok 1 - DT-06 duplicate user ID and duplicate request ID are both rejected
+      ---
+      duration_ms: 75.1044
+      type: 'test'
+      ...
+    1..1
+ok 3 - 3. Duplicate identifiers
+  ---
+  duration_ms: 76.2758
+  type: 'suite'
+  ...
+# Subtest: 4. Role permissions
+    # Subtest: DT-07 only a Service Officer may assign a Technician
+    ok 1 - DT-07 only a Service Officer may assign a Technician
+      ---
+      duration_ms: 54.912
+      type: 'test'
+      ...
+    # Subtest: DT-08 only the assigned Technician may start work
+    ok 2 - DT-08 only the assigned Technician may start work
+      ---
+      duration_ms: 71.4769
+      type: 'test'
+      ...
+    # Subtest: DT-09 a requester cannot cancel or update someone else's request
+    ok 3 - DT-09 a requester cannot cancel or update someone else's request
+      ---
+      duration_ms: 50.9852
+      type: 'test'
+      ...
+    1..3
+ok 4 - 4. Role permissions
+  ---
+  duration_ms: 179.0923
+  type: 'suite'
+  ...
+# Subtest: 5. Controlled status transitions
+    # Subtest: DT-10 a request cannot skip steps or be closed before it is Resolved
+    ok 1 - DT-10 a request cannot skip steps or be closed before it is Resolved
+      ---
+      duration_ms: 49.9871
+      type: 'test'
+      ...
+    # Subtest: DT-11 a Cancelled request is final and cannot be reviewed
+    ok 2 - DT-11 a Cancelled request is final and cannot be reviewed
+      ---
+      duration_ms: 50.6351
+      type: 'test'
+      ...
+    1..2
+ok 5 - 5. Controlled status transitions
+  ---
+  duration_ms: 101.7072
+  type: 'suite'
+  ...
+# Subtest: 6. Specialised request behaviour
+    # Subtest: DT-12 Maintenance hazard level drives SLA and priority score
+    ok 1 - DT-12 Maintenance hazard level drives SLA and priority score
+      ---
+      duration_ms: 1.1656
+      type: 'test'
+      ...
+    # Subtest: DT-13 Cleaning hygiene risk shortens the SLA and raises the score
+    ok 2 - DT-13 Cleaning hygiene risk shortens the SLA and raises the score
+      ---
+      duration_ms: 0.841
+      type: 'test'
+      ...
+    1..2
+ok 6 - 6. Specialised request behaviour
+  ---
+  duration_ms: 2.2002
+  type: 'suite'
+  ...
+# Subtest: 7. Polymorphism and abstraction
+    # Subtest: DT-14 one loop works on a mixed collection of request types
+    ok 1 - DT-14 one loop works on a mixed collection of request types
+      ---
+      duration_ms: 85.4707
+      type: 'test'
+      ...
+    # Subtest: DT-15 ServiceRequest cannot be instantiated directly
+    ok 2 - DT-15 ServiceRequest cannot be instantiated directly
+      ---
+      duration_ms: 0.4126
+      type: 'test'
+      ...
+    # Subtest: DT-16 a subclass that does not override the abstract methods fails clearly
+    ok 3 - DT-16 a subclass that does not override the abstract methods fails clearly
+      ---
+      duration_ms: 0.5208
+      type: 'test'
+      ...
+    1..3
+ok 7 - 7. Polymorphism and abstraction
+  ---
+  duration_ms: 86.6471
+  type: 'suite'
+  ...
+# Subtest: 8. Saving JSON data
+    # Subtest: DT-17 registering users and submitting a request writes the JSON files
+    ok 1 - DT-17 registering users and submitting a request writes the JSON files
+      ---
+      duration_ms: 141.813
+      type: 'test'
+      ...
+    # Subtest: DT-18 workflow actions are saved to history and audit files
+    ok 2 - DT-18 workflow actions are saved to history and audit files
+      ---
+      duration_ms: 75.5583
+      type: 'test'
+      ...
+    # Subtest: DT-19 a rejected action is NOT saved
+    ok 3 - DT-19 a rejected action is NOT saved
+      ---
+      duration_ms: 27.4798
+      type: 'test'
+      ...
+    1..3
+ok 8 - 8. Saving JSON data
+  ---
+  duration_ms: 248.2775
+  type: 'suite'
+  ...
+# Subtest: 9. Loading and restoring saved objects
+    # Subtest: DT-20 a new manager restores the correct classes, state and history
+    ok 1 - DT-20 a new manager restores the correct classes, state and history
+      ---
+      duration_ms: 89.4272
+      type: 'test'
+      ...
+    # Subtest: DT-21 a restored request can continue through the workflow
+    ok 2 - DT-21 a restored request can continue through the workflow
+      ---
+      duration_ms: 95.6081
+      type: 'test'
+      ...
+    # Subtest: DT-22 new IDs continue after a restart instead of colliding
+    ok 3 - DT-22 new IDs continue after a restart instead of colliding
+      ---
+      duration_ms: 58.058
+      type: 'test'
+      ...
+    1..3
+ok 9 - 9. Loading and restoring saved objects
+  ---
+  duration_ms: 243.7967
+  type: 'suite'
+  ...
+# Subtest: 10. Missing or empty data files
+    # Subtest: DT-23 a missing file loads as an empty array
+    ok 1 - DT-23 a missing file loads as an empty array
+      ---
+      duration_ms: 3.9252
+      type: 'test'
+      ...
+    # Subtest: DT-24 a manager starts cleanly when no data files exist
+    ok 2 - DT-24 a manager starts cleanly when no data files exist
+      ---
+      duration_ms: 3.0874
+      type: 'test'
+      ...
+    # Subtest: DT-25 a zero-byte file and a file containing [] both load as empty
+    ok 3 - DT-25 a zero-byte file and a file containing [] both load as empty
+      ---
+      duration_ms: 9.0713
+      type: 'test'
+      ...
+    1..3
+ok 10 - 10. Missing or empty data files
+  ---
+  duration_ms: 17.6092
+  type: 'suite'
+  ...
+# Subtest: 11. File-reading and file-writing errors
+    # Subtest: DT-26 corrupt JSON gives a clear File Error
+    ok 1 - DT-26 corrupt JSON gives a clear File Error
+      ---
+      duration_ms: 9.5758
+      type: 'test'
+      ...
+    # Subtest: DT-27 valid JSON that is not an array is rejected
+    ok 2 - DT-27 valid JSON that is not an array is rejected
+      ---
+      duration_ms: 4.0455
+      type: 'test'
+      ...
+    # Subtest: DT-28 saving non-array data is refused
+    ok 3 - DT-28 saving non-array data is refused
+      ---
+      duration_ms: 1.1004
+      type: 'test'
+      ...
+    # Subtest: DT-29 a write that cannot happen gives a clear File Error
+    ok 4 - DT-29 a write that cannot happen gives a clear File Error
+      ---
+      duration_ms: 2.2212
+      type: 'test'
+      ...
+    # Subtest: DT-30 repository rejects a duplicate id and an update of an unknown id
+    ok 5 - DT-30 repository rejects a duplicate id and an update of an unknown id
+      ---
+      duration_ms: 8.9948
+      type: 'test'
+      ...
+    1..5
+ok 11 - 11. File-reading and file-writing errors
+  ---
+  duration_ms: 26.7766
+  type: 'suite'
+  ...
+# Subtest: 12. Report calculations
+    # Subtest: DT-31 requests grouped by status
+    ok 1 - DT-31 requests grouped by status
+      ---
+      duration_ms: 4.0162
+      type: 'test'
+      ...
+    # Subtest: DT-32 requests grouped by category and by priority
+    ok 2 - DT-32 requests grouped by category and by priority
+      ---
+      duration_ms: 0.522
+      type: 'test'
+      ...
+    # Subtest: DT-33 urgent requests are listed
+    ok 3 - DT-33 urgent requests are listed
+      ---
+      duration_ms: 0.3554
+      type: 'test'
+      ...
+    # Subtest: DT-34 request volume by location is counted and sorted busiest first
+    ok 4 - DT-34 request volume by location is counted and sorted busiest first
+      ---
+      duration_ms: 0.6114
+      type: 'test'
+      ...
+    # Subtest: DT-35 assigned and completed requests per Technician
+    ok 5 - DT-35 assigned and completed requests per Technician
+      ---
+      duration_ms: 0.6143
+      type: 'test'
+      ...
+    # Subtest: DT-36 average resolution time is a sensible number
+    ok 6 - DT-36 average resolution time is a sensible number
+      ---
+      duration_ms: 0.5111
+      type: 'test'
+      ...
+    # Subtest: DT-37 overdue requests only include unfinished requests past their deadline
+    ok 7 - DT-37 overdue requests only include unfinished requests past their deadline
+      ---
+      duration_ms: 0.379
+      type: 'test'
+      ...
+    # Subtest: DT-38 full report totals
+    ok 8 - DT-38 full report totals
+      ---
+      duration_ms: 0.4715
+      type: 'test'
+      ...
+    1..8
+ok 12 - 12. Report calculations
+  ---
+  duration_ms: 178.3657
+  type: 'suite'
+  ...
+# Subtest: 13. Search, filter and sort
+    # Subtest: DT-39 search matches request ID or title, ignoring case
+    ok 1 - DT-39 search matches request ID or title, ignoring case
+      ---
+      duration_ms: 3.8014
+      type: 'test'
+      ...
+    # Subtest: DT-40 filter by category, status and priority
+    ok 2 - DT-40 filter by category, status and priority
+      ---
+      duration_ms: 0.6452
+      type: 'test'
+      ...
+    # Subtest: DT-41 filter by assigned Technician
+    ok 3 - DT-41 filter by assigned Technician
+      ---
+      duration_ms: 0.4165
+      type: 'test'
+      ...
+    # Subtest: DT-42 sort by date submitted, oldest first and newest first
+    ok 4 - DT-42 sort by date submitted, oldest first and newest first
+      ---
+      duration_ms: 1.1116
+      type: 'test'
+      ...
+    # Subtest: DT-43 sort by priority score uses each category's own scoring
+    ok 5 - DT-43 sort by priority score uses each category's own scoring
+      ---
+      duration_ms: 0.6321
+      type: 'test'
+      ...
+    # Subtest: DT-44 sorting does not change the stored order
+    ok 6 - DT-44 sorting does not change the stored order
+      ---
+      duration_ms: 0.2168
+      type: 'test'
+      ...
+    1..6
+ok 13 - 13. Search, filter and sort
+  ---
+  duration_ms: 201.5401
+  type: 'suite'
+  ...
+1..13
+# tests 44
+# suites 13
+# pass 44
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1137.8284

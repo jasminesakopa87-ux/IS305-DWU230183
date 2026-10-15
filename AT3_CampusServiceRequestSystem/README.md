@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Student name** | [YOUR FULL NAME] |
+| **Student name** | Jasmine SAKOPA |
 | **Student ID** | DWU230183 |
 | **Course / assessment** | IS305 Object-Oriented Programming - AT3 Major Project, Divine Word University |
 | **GitHub repository** | https://github.com/jasminesakopa87-ux/IS305-DWU230183 (folder `AT3_CampusServiceRequestSystem`) |
