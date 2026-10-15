@@ -2,7 +2,7 @@
 
 > **Draft.** This was written from what actually happened during the project. Before you submit it: (1) if DWU or IS305 gives an official declaration form or required wording, use that and copy the facts below into it; (2) change anything that is not true for you; (3) fill in the name and date.
 
-**Student name:** [YOUR FULL NAME]
+**Student name:** Jasmine SAKOPA
 **Student ID:** DWU230183
 **Assessment:** IS305 AT3 Major Project - Campus Service Request Management System
 
